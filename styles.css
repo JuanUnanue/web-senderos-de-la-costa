@@ -2,10 +2,10 @@
    VARIABLES - PERSONALIZA AQUÍ LOS COLORES
    ============================================ */
 :root {
-    /* Colores principales - CAMBIAR POR LOS DE TU EMPRESA */
-    --color-primary: #2563eb;      /* Azul principal */
-    --color-secondary: #1e40af;    /* Azul oscuro */
-    --color-accent: #f59e0b;       /* Naranja/amarillo acento */
+    /* Colores principales - ROJO COCA-COLA */
+    --color-primary: #F40009;      /* Rojo Coca-Cola */
+    --color-secondary: #C40007;    /* Rojo oscuro */
+    --color-accent: #FF2B2B;       /* Rojo claro acento */
     
     /* Colores base */
     --color-dark: #1f2937;
