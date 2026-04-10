@@ -87,8 +87,8 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
 // ============================================
 const projectGalleries = {
     1: {
-        images: ['images/projects/project1/1.jpg'],
-        name: 'Techo teja pizarra española'
+        images: ['images/projects/proyecto1/1.jpg'],
+        name: 'Pergolas'
     },
     2: {
         images: [
@@ -115,7 +115,24 @@ const projectGalleries = {
             'images/projects/proyecto3/6.jpg',
             'images/projects/proyecto3/7.jpg'
         ],
-        name: 'Proyecto 3'
+        name: 'Techo para local gastronomico'
+    },
+    4: {
+        images: [
+            'images/projects/proyecto4/1.jpg',
+            'images/projects/proyecto4/2.jpg',
+            'images/projects/proyecto4/3.jpg',
+            'images/projects/proyecto4/4.jpg',
+            'images/projects/proyecto4/5.jpg',
+            'images/projects/proyecto4/6.jpg',
+            'images/projects/proyecto4/7.jpg',
+            'images/projects/proyecto4/8.jpg',
+            'images/projects/proyecto4/9.jpg',
+            'images/projects/proyecto4/10.jpg',
+            'images/projects/proyecto4/11.jpg',
+            'images/projects/proyecto4/12.jpg'
+        ],
+        name: 'Construcción de local Café'
     }
 };
 
