@@ -259,6 +259,10 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 /* ============================================================
    BUDGET ITEMS TABLE
    ============================================================ */
+/* Modo toggle presupuesto */
+.modo-ppto-btn { background: var(--ink-mid); color: var(--chalk-dim); border: 1px solid var(--border); }
+.modo-ppto-btn.active { background: rgba(232,0,11,0.12); color: var(--chalk); border-color: var(--red); }
+
 .items-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 8px; }
 .items-table th { background: var(--ink-mid); padding: 8px 10px; text-align: left; font-size: 0.75rem; color: var(--muted); }
 .items-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
@@ -893,24 +897,55 @@ tr:hover td { background: rgba(255,255,255,0.02); }
             </div>
 
             <hr style="border-color:var(--border);margin:16px 0">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-                <h4 style="font-size:0.9rem">Ítems del presupuesto</h4>
-                <button class="btn btn-ghost btn-sm" id="btn-add-item">+ Agregar ítem</button>
+
+            <!-- Toggle modo importe -->
+            <div style="display:flex;gap:8px;margin-bottom:16px">
+                <button type="button" class="btn btn-sm modo-ppto-btn active" data-modo="total"
+                    onclick="setPptoModo('total')"
+                    style="flex:1;justify-content:center">
+                    $ Monto total
+                </button>
+                <button type="button" class="btn btn-sm modo-ppto-btn" data-modo="detallado"
+                    onclick="setPptoModo('detallado')"
+                    style="flex:1;justify-content:center">
+                    📋 Ítem por ítem
+                </button>
             </div>
-            <table class="items-table">
-                <thead>
-                    <tr>
-                        <th style="width:45%">Descripción</th>
-                        <th style="width:18%">Monto ($)</th>
-                        <th style="width:16%">Mat. int. ($)</th>
-                        <th style="width:16%">M.O. int. ($)</th>
-                        <th style="width:5%"></th>
-                    </tr>
-                </thead>
-                <tbody id="ppto-items-tbody"></tbody>
-            </table>
-            <div class="items-total">
-                Total: <strong id="ppto-total">$ 0</strong>
+
+            <!-- MODO: total directo -->
+            <div id="ppto-modo-total">
+                <div class="form-field">
+                    <label>Monto total del presupuesto ($) *</label>
+                    <input type="number" id="ppto-monto-total" placeholder="0.00" step="0.01" min="0"
+                        style="font-size:1.3rem;padding:14px;text-align:right"
+                        oninput="document.getElementById('ppto-total').textContent = fmt$(this.value)">
+                </div>
+                <div class="items-total" style="margin-top:10px">
+                    Total: <strong id="ppto-total">$ 0</strong>
+                </div>
+            </div>
+
+            <!-- MODO: ítem por ítem -->
+            <div id="ppto-modo-detallado" style="display:none">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                    <h4 style="font-size:0.9rem;color:var(--muted)">Detalle de ítems</h4>
+                    <button class="btn btn-ghost btn-sm" id="btn-add-item">+ Agregar ítem</button>
+                </div>
+                <table class="items-table">
+                    <thead>
+                        <tr>
+                            <th style="width:45%">Descripción</th>
+                            <th style="width:18%">Monto ($)</th>
+                            <th style="width:16%">Mat. int. ($)</th>
+                            <th style="width:16%">M.O. int. ($)</th>
+                            <th style="width:5%"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="ppto-items-tbody"></tbody>
+                </table>
+                <div class="items-total">
+                    Total: <strong id="ppto-total-det">$ 0</strong>
+                </div>
             </div>
 
             <hr style="border-color:var(--border);margin:16px 0">
@@ -1471,10 +1506,20 @@ async function deleteObra(id, titulo) {
 // ============================================================
 let pptoPanel = { tipo: null, id: null, nombre: null }; // 'cliente' | 'obra'
 let pptoItems = [];
+let pptoModo  = 'total'; // 'total' | 'detallado'
+
+function setPptoModo(modo) {
+    pptoModo = modo;
+    document.getElementById('ppto-modo-total').style.display     = modo === 'total'     ? 'block' : 'none';
+    document.getElementById('ppto-modo-detallado').style.display = modo === 'detallado' ? 'block' : 'none';
+    document.querySelectorAll('.modo-ppto-btn').forEach(b =>
+        b.classList.toggle('active', b.dataset.modo === modo)
+    );
+}
 
 function recalcTotal() {
     const total = pptoItems.reduce((s,it) => s + Number(it.monto||0), 0);
-    document.getElementById('ppto-total').textContent = fmt$(total);
+    document.getElementById('ppto-total-det').textContent = fmt$(total);
 }
 
 function renderPptoItems() {
@@ -1568,8 +1613,10 @@ document.getElementById('btn-nuevo-presupuesto').addEventListener('click', () =>
     document.getElementById('ppto-nota-cliente').value = 'Precios sin IVA. IVA a cargo del cliente.';
     document.getElementById('ppto-nota-interna').value = '';
     document.getElementById('ppto-estado').value       = 'borrador';
+    document.getElementById('ppto-monto-total').value  = '';
+    document.getElementById('ppto-total').textContent  = '$ 0';
     pptoItems = [];
-    // Pre-llenar según contexto
+    setPptoModo('total'); // arranca en modo total por defecto
     populateClienteSelect('ppto-cliente', pptoPanel.tipo === 'cliente' ? pptoPanel.id : null);
     populateObraSelect('ppto-obra',       pptoPanel.tipo === 'obra'    ? pptoPanel.id : null);
     renderPptoItems();
@@ -1612,10 +1659,21 @@ async function editPresupuesto(id) {
     document.getElementById('ppto-nota-cliente').value    = data.notas_cliente || '';
     document.getElementById('ppto-nota-interna').value    = data.notas_internas || '';
     document.getElementById('ppto-estado').value          = data.estado || 'borrador';
-    pptoItems = (data.presupuesto_items || []).sort((a,b)=>a.orden-b.orden);
+    const items = (data.presupuesto_items || []).sort((a,b)=>a.orden-b.orden);
+    // Detectar modo
+    const esTotalDirecto = items.length === 1 && items[0].descripcion === '__total__';
+    if (esTotalDirecto) {
+        setPptoModo('total');
+        document.getElementById('ppto-monto-total').value = items[0].monto;
+        document.getElementById('ppto-total').textContent = fmt$(items[0].monto);
+        pptoItems = [];
+    } else {
+        setPptoModo('detallado');
+        pptoItems = items;
+        renderPptoItems();
+    }
     populateClienteSelect('ppto-cliente', data.cliente_id);
     populateObraSelect('ppto-obra', data.obra_id);
-    renderPptoItems();
     document.getElementById('modal-ppto-title').textContent = 'Editar presupuesto';
     openModal('modal-presupuesto');
 }
@@ -1643,10 +1701,14 @@ document.getElementById('btn-save-ppto').addEventListener('click', async () => {
         if (error) { toast('Error al guardar','err'); return; }
         pptoId = data.id;
     }
-    // Save items
-    await sb.from('presupuesto_items').delete().eq('presupuesto_id', pptoId);
-    if (pptoItems.length) {
-        const items = pptoItems.map((it,i) => ({
+    // Armar ítems según el modo
+    let itemsToSave = [];
+    if (pptoModo === 'total') {
+        const monto = Number(document.getElementById('ppto-monto-total').value || 0);
+        if (!monto) { toast('Ingresá el monto total','err'); return; }
+        itemsToSave = [{ presupuesto_id: pptoId, descripcion: '__total__', monto, orden: 0 }];
+    } else {
+        itemsToSave = pptoItems.map((it,i) => ({
             presupuesto_id:   pptoId,
             descripcion:      it.descripcion,
             monto:            Number(it.monto||0),
@@ -1654,7 +1716,10 @@ document.getElementById('btn-save-ppto').addEventListener('click', async () => {
             costo_mano_obra:  it.costo_mano_obra  ? Number(it.costo_mano_obra)  : null,
             orden: i
         }));
-        const { error } = await sb.from('presupuesto_items').insert(items);
+    }
+    await sb.from('presupuesto_items').delete().eq('presupuesto_id', pptoId);
+    if (itemsToSave.length) {
+        const { error } = await sb.from('presupuesto_items').insert(itemsToSave);
         if (error) { toast('Error al guardar ítems','err'); return; }
     }
     closeModal('modal-presupuesto');
@@ -1683,11 +1748,19 @@ async function previewPdf(id) {
     const total  = items.reduce((s,i) => s + Number(i.monto||0), 0);
     const hoy    = new Date().toLocaleDateString('es-AR');
     const sheet  = document.getElementById('pdf-sheet');
+    // Detectar si es total directo o ítems
+    const esTotalDirecto = items.length === 1 && items[0].descripcion === '__total__';
+
     sheet.innerHTML = `
         <div class="pdf-header">
-            <div>
-                <div class="pdf-company-name">Senderos de la Costa</div>
-                <div class="pdf-company-sub">Constructora · Mar del Plata, Buenos Aires<br>Tel: +54 223 522-3702 · senderosdelacosta@hotmail.com</div>
+            <div style="display:flex;align-items:center;gap:16px">
+                <img src="../images/logo.png"
+                    style="height:64px;width:auto;object-fit:contain"
+                    onerror="this.style.display='none'">
+                <div>
+                    <div class="pdf-company-name">Senderos de la Costa</div>
+                    <div class="pdf-company-sub">Constructora · Mar del Plata, Buenos Aires<br>Tel: +54 223 522-3702 · senderosdelacosta@hotmail.com</div>
+                </div>
             </div>
             <div class="pdf-doc-title">
                 <h2>PRESUPUESTO</h2>
@@ -1710,6 +1783,7 @@ async function previewPdf(id) {
                 ${data.obras?.direccion ? `<p>${data.obras.direccion}</p>` : ''}
             </div>
         </div>
+        ${esTotalDirecto ? '' : `
         <p class="pdf-items-title">Detalle de trabajos</p>
         <table class="pdf-items-table">
             <thead><tr><th style="width:75%">Descripción</th><th style="width:25%">Importe</th></tr></thead>
@@ -1717,6 +1791,7 @@ async function previewPdf(id) {
                 ${items.map(it => `<tr><td>${it.descripcion}</td><td>$ ${Number(it.monto).toLocaleString('es-AR')}</td></tr>`).join('')}
             </tbody>
         </table>
+        `}
         <div class="pdf-total-row">
             <div class="pdf-total-box">
                 <div class="lbl">TOTAL</div>
