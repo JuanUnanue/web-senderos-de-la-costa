@@ -321,14 +321,140 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 }
 
 /* ============================================================
+   MOBILE TOP BAR
+   ============================================================ */
+.mobile-topbar {
+    display: none;
+    position: fixed; top: 0; left: 0; right: 0;
+    height: 56px; background: var(--ink-soft);
+    border-bottom: 1px solid var(--border);
+    align-items: center; justify-content: space-between;
+    padding: 0 16px; z-index: 200;
+}
+.mobile-topbar-logo { font-family: var(--font-head); font-size: 1rem; color: var(--red); letter-spacing: 1px; }
+.mobile-logout-btn {
+    background: none; border: 1px solid var(--border);
+    color: var(--muted); border-radius: 6px; padding: 6px 12px;
+    font-size: 0.75rem; cursor: pointer; font-family: var(--font-body);
+}
+
+/* ============================================================
+   MOBILE BOTTOM NAV
+   ============================================================ */
+.bottom-nav {
+    display: none;
+    position: fixed; bottom: 0; left: 0; right: 0;
+    height: 64px; background: var(--ink-soft);
+    border-top: 1px solid var(--border);
+    z-index: 200;
+    padding: 0 4px;
+}
+.bottom-nav-inner {
+    display: flex; height: 100%; align-items: stretch;
+}
+.bottom-nav-item {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 3px;
+    cursor: pointer; color: var(--muted);
+    font-size: 0.62rem; letter-spacing: 0.2px;
+    border-top: 2px solid transparent;
+    transition: all 0.15s; padding: 0 4px;
+    -webkit-tap-highlight-color: transparent;
+}
+.bottom-nav-item .bnav-icon { font-size: 1.25rem; line-height: 1; }
+.bottom-nav-item.active { color: var(--red); border-top-color: var(--red); }
+.bottom-nav-item:active { background: rgba(255,255,255,0.04); }
+
+/* ============================================================
    RESPONSIVE
    ============================================================ */
 @media (max-width: 768px) {
-    :root { --sidebar-w: 0px; }
+    /* Hide sidebar, show mobile bars */
     .sidebar { display: none; }
-    .main-content { margin-left: 0; padding: 20px; }
-    .form-grid { grid-template-columns: 1fr; }
-    .stats-row { grid-template-columns: 1fr 1fr; }
+    .mobile-topbar { display: flex; }
+    .bottom-nav { display: block; }
+
+    /* Main layout */
+    .main-content {
+        margin-left: 0;
+        padding: 72px 16px 80px; /* top: below topbar, bottom: above bottom nav */
+        min-height: 100vh;
+    }
+
+    /* Topbar within views */
+    .topbar { margin-bottom: 20px; }
+    .topbar-title { font-size: 1.5rem; }
+
+    /* Stats */
+    .stats-row { grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+    .stat-card { padding: 14px 16px; }
+    .stat-value { font-size: 1.6rem; }
+    .stat-label { font-size: 0.7rem; }
+
+    /* Cards */
+    .card { padding: 16px; border-radius: 10px; }
+
+    /* Section bar */
+    .section-bar { margin-bottom: 14px; }
+    .section-bar .btn { padding: 10px 16px; font-size: 0.85rem; }
+
+    /* Tables — scroll on mobile */
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table { font-size: 0.82rem; min-width: 480px; }
+    th, td { padding: 10px 12px; }
+    .td-actions { flex-direction: row; flex-wrap: wrap; gap: 4px; }
+    .btn-sm { padding: 6px 10px; font-size: 0.75rem; }
+
+    /* Filters */
+    .filter-obra { padding: 8px 12px; font-size: 0.8rem; }
+
+    /* Forms */
+    .form-grid,
+    .form-grid.cols-3 { grid-template-columns: 1fr !important; }
+    .form-field input,
+    .form-field textarea,
+    .form-field select {
+        padding: 12px 14px;
+        font-size: 1rem; /* prevents iOS zoom */
+        border-radius: 8px;
+    }
+
+    /* Modals — slide up from bottom */
+    .modal-overlay {
+        align-items: flex-end;
+        padding: 0;
+    }
+    .modal {
+        border-radius: 16px 16px 0 0;
+        max-height: 92vh;
+        max-width: 100%;
+        transform: translateY(100%);
+    }
+    .modal-overlay.open .modal { transform: translateY(0); }
+    .modal-body { padding: 20px 16px; }
+    .modal-header { padding: 16px 16px 12px; }
+    .modal-footer { padding: 12px 16px 24px; }
+
+    /* Budget items table on modal */
+    .items-table { min-width: 400px; }
+    .items-table input { font-size: 0.9rem; padding: 6px 2px; }
+
+    /* Toast — above bottom nav */
+    #toast { bottom: 76px; right: 12px; left: 12px; max-width: 100%; text-align: center; }
+
+    /* PDF actions */
+    .pdf-actions { top: auto; bottom: 16px; right: 12px; left: 12px; justify-content: center; }
+    #pdf-preview { padding: 16px 8px 100px; }
+    .pdf-sheet { padding: 12mm 8mm; }
+    .pdf-header { flex-direction: column; gap: 12px; }
+    .pdf-doc-title { text-align: left; }
+    .pdf-meta { grid-template-columns: 1fr; gap: 12px; }
+}
+
+/* Smaller phones */
+@media (max-width: 380px) {
+    .stats-row { grid-template-columns: 1fr; }
+    .stat-value { font-size: 1.8rem; }
 }
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -363,6 +489,39 @@ tr:hover td { background: rgba(255,255,255,0.02); }
      APP
      ============================================================ -->
 <div id="app">
+
+    <!-- MOBILE TOP BAR -->
+    <div class="mobile-topbar">
+        <div class="mobile-topbar-logo">Senderos de la Costa</div>
+        <button class="mobile-logout-btn" id="btn-logout-mobile">Salir</button>
+    </div>
+
+    <!-- MOBILE BOTTOM NAV -->
+    <nav class="bottom-nav">
+        <div class="bottom-nav-inner">
+            <div class="bottom-nav-item active" data-view="dashboard">
+                <span class="bnav-icon">▦</span>
+                <span>Inicio</span>
+            </div>
+            <div class="bottom-nav-item" data-view="clientes">
+                <span class="bnav-icon">◉</span>
+                <span>Clientes</span>
+            </div>
+            <div class="bottom-nav-item" data-view="obras">
+                <span class="bnav-icon">◈</span>
+                <span>Obras</span>
+            </div>
+            <div class="bottom-nav-item" data-view="presupuestos">
+                <span class="bnav-icon">◎</span>
+                <span>Presup.</span>
+            </div>
+            <div class="bottom-nav-item" data-view="transacciones">
+                <span class="bnav-icon">$</span>
+                <span>Finanzas</span>
+            </div>
+        </div>
+    </nav>
+
     <!-- SIDEBAR -->
     <aside class="sidebar">
         <div class="sidebar-header">
@@ -842,6 +1001,10 @@ document.getElementById('btn-logout').addEventListener('click', async () => {
     await sb.auth.signOut();
     showLogin();
 });
+document.getElementById('btn-logout-mobile').addEventListener('click', async () => {
+    await sb.auth.signOut();
+    showLogin();
+});
 
 // ============================================================
 // NAVIGATION
@@ -849,14 +1012,15 @@ document.getElementById('btn-logout').addEventListener('click', async () => {
 let currentView = 'dashboard';
 
 document.querySelectorAll('.nav-item').forEach(item => {
-    item.addEventListener('click', () => {
-        const view = item.dataset.view;
-        navigate(view);
-    });
+    item.addEventListener('click', () => navigate(item.dataset.view));
+});
+document.querySelectorAll('.bottom-nav-item').forEach(item => {
+    item.addEventListener('click', () => navigate(item.dataset.view));
 });
 
 function navigate(view) {
     document.querySelectorAll('.nav-item').forEach(i => i.classList.toggle('active', i.dataset.view === view));
+    document.querySelectorAll('.bottom-nav-item').forEach(i => i.classList.toggle('active', i.dataset.view === view));
     document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + view));
     currentView = view;
     if (view === 'dashboard')     loadDashboard();
