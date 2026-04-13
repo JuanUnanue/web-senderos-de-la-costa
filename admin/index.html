@@ -511,10 +511,6 @@ tr:hover td { background: rgba(255,255,255,0.02); }
                 <span class="bnav-icon">◈</span>
                 <span>Obras</span>
             </div>
-            <div class="bottom-nav-item" data-view="presupuestos">
-                <span class="bnav-icon">◎</span>
-                <span>Presup.</span>
-            </div>
             <div class="bottom-nav-item" data-view="transacciones">
                 <span class="bnav-icon">$</span>
                 <span>Finanzas</span>
@@ -541,9 +537,6 @@ tr:hover td { background: rgba(255,255,255,0.02); }
             </div>
             <div class="nav-item" data-view="obras">
                 <span class="icon">◈</span> Obras
-            </div>
-            <div class="nav-item" data-view="presupuestos">
-                <span class="icon">◎</span> Presupuestos
             </div>
             <div class="nav-item" data-view="transacciones">
                 <span class="icon">$</span> Finanzas
@@ -602,7 +595,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
             <div class="card">
                 <div class="table-wrap">
                     <table>
-                        <thead><tr><th>Nombre</th><th>Teléfono</th><th>Email</th><th>Obras</th><th>Acciones</th></tr></thead>
+                        <thead><tr><th>Nombre</th><th>Teléfono</th><th>Email</th><th>Obras</th><th>Presupuestos</th><th>Acciones</th></tr></thead>
                         <tbody id="clientes-tbody">
                             <tr class="loading-row"><td colspan="5">Cargando…</td></tr>
                         </tbody>
@@ -632,7 +625,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
             <div class="card">
                 <div class="table-wrap">
                     <table>
-                        <thead><tr><th>Obra</th><th>Cliente</th><th>Dirección</th><th>Estado</th><th>Inicio</th><th>Acciones</th></tr></thead>
+                        <thead><tr><th>Obra</th><th>Cliente</th><th>Dirección</th><th>Estado</th><th>Inicio</th><th>Presupuestos</th><th>Acciones</th></tr></thead>
                         <tbody id="obras-tbody">
                             <tr class="loading-row"><td colspan="6">Cargando…</td></tr>
                         </tbody>
@@ -641,26 +634,38 @@ tr:hover td { background: rgba(255,255,255,0.02); }
             </div>
         </div>
 
-        <!-- PRESUPUESTOS -->
-        <div id="view-presupuestos" class="view">
-            <div class="topbar">
-                <div><div class="topbar-title">Presupuestos</div></div>
-            </div>
-            <div class="section-bar">
-                <div class="section-bar-left">
-                    <h2>Todos los presupuestos</h2>
-                    <p id="presupuestos-count">Cargando…</p>
+        <!-- PRESUPUESTOS PANEL (overlay, no es una view del nav) -->
+        <div id="ppto-panel" style="
+            display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75);
+            z-index:900; padding:24px; overflow-y:auto;
+        " onclick="closePptoPanel(event)">
+            <div style="
+                background:var(--ink-soft); border:1px solid var(--border);
+                border-radius:var(--radius); max-width:860px; margin:0 auto;
+                min-height:400px;
+            " onclick="event.stopPropagation()">
+                <!-- Header -->
+                <div style="padding:20px 24px 16px; border-bottom:1px solid var(--border);
+                    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+                    <div>
+                        <div style="font-size:0.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px" id="ppto-panel-context"></div>
+                        <h2 style="font-size:1.2rem" id="ppto-panel-title">Presupuestos</h2>
+                    </div>
+                    <div style="display:flex;gap:8px;align-items:center">
+                        <button class="btn btn-primary btn-sm" id="btn-nuevo-presupuesto">+ Nuevo presupuesto</button>
+                        <button onclick="closePptoPanel()" style="background:none;border:none;color:var(--muted);font-size:1.3rem;cursor:pointer;padding:4px 8px">✕</button>
+                    </div>
                 </div>
-                <button class="btn btn-primary" id="btn-nuevo-presupuesto">+ Nuevo presupuesto</button>
-            </div>
-            <div class="card">
-                <div class="table-wrap">
-                    <table>
-                        <thead><tr><th>N°</th><th>Título</th><th>Cliente</th><th>Total</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr></thead>
-                        <tbody id="presupuestos-tbody">
-                            <tr class="loading-row"><td colspan="7">Cargando…</td></tr>
-                        </tbody>
-                    </table>
+                <!-- Lista -->
+                <div style="padding:20px 24px">
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>N°</th><th>Título</th><th>Total</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr></thead>
+                            <tbody id="presupuestos-tbody">
+                                <tr class="loading-row"><td colspan="6">Cargando…</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1128,7 +1133,6 @@ function navigate(view) {
     if (view === 'dashboard')     loadDashboard();
     if (view === 'clientes')      loadClientes();
     if (view === 'obras')         loadObras();
-    if (view === 'presupuestos')  loadPresupuestos();
     if (view === 'transacciones') loadTransacciones();
     if (view === 'equipos')       loadEquipos();
 }
@@ -1252,11 +1256,16 @@ async function loadDashboard() {
 // CLIENTES
 // ============================================================
 async function loadClientes() {
-    const { data } = await sb.from('clientes').select('*, obras(id)').order('nombre');
+    const [{ data }, { data: pptos }] = await Promise.all([
+        sb.from('clientes').select('*, obras(id)').order('nombre'),
+        sb.from('presupuestos').select('id, cliente_id'),
+    ]);
     document.getElementById('clientes-count').textContent = `${(data||[]).length} clientes`;
+    const pCount = {};
+    (pptos||[]).forEach(p => { pCount[p.cliente_id] = (pCount[p.cliente_id]||0)+1; });
     const tbody = document.getElementById('clientes-tbody');
     if (!data || !data.length) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:40px">Sin clientes aún. Agregá el primero.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:40px">Sin clientes aún. Agregá el primero.</td></tr>';
         return;
     }
     tbody.innerHTML = data.map(c => `
@@ -1265,6 +1274,11 @@ async function loadClientes() {
             <td>${c.telefono || '–'}</td>
             <td>${c.email || '–'}</td>
             <td>${(c.obras||[]).length} obra(s)</td>
+            <td>
+                <button class="btn btn-ghost btn-sm" onclick="openPptoPanel('cliente','${c.id}','${c.nombre.replace(/'/g,'\\\'') }')">
+                    📄 ${pCount[c.id] || 0} presupuesto(s)
+                </button>
+            </td>
             <td><div class="td-actions">
                 <button class="btn btn-ghost btn-sm" onclick="editCliente('${c.id}')">Editar</button>
                 <button class="btn btn-danger btn-sm" onclick="deleteCliente('${c.id}','${c.nombre.replace(/'/g,'\\\'') }')">Eliminar</button>
@@ -1351,6 +1365,10 @@ async function loadObras() {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:40px">Sin obras en esta categoría.</td></tr>';
         return;
     }
+    const { data: pptos } = await sb.from('presupuestos').select('id, obra_id');
+    const pCount = {};
+    (pptos||[]).forEach(p => { if(p.obra_id) pCount[p.obra_id] = (pCount[p.obra_id]||0)+1; });
+
     tbody.innerHTML = data.map(o => `
         <tr>
             <td><strong>${o.titulo}</strong></td>
@@ -1358,6 +1376,11 @@ async function loadObras() {
             <td>${o.direccion || '–'}</td>
             <td>${estadoBadge(o.estado)}</td>
             <td>${fmtDate(o.fecha_inicio)}</td>
+            <td>
+                <button class="btn btn-ghost btn-sm" onclick="openPptoPanel('obra','${o.id}','${o.titulo.replace(/'/g,'\\\'') }')">
+                    📄 ${pCount[o.id] || 0} presupuesto(s)
+                </button>
+            </td>
             <td><div class="td-actions">
                 <button class="btn btn-ghost btn-sm" onclick="editObra('${o.id}')">Editar</button>
                 <button class="btn btn-danger btn-sm" onclick="deleteObra('${o.id}','${o.titulo.replace(/'/g,'\\\'') }')">Eliminar</button>
@@ -1443,6 +1466,10 @@ async function deleteObra(id, titulo) {
 // ============================================================
 // PRESUPUESTOS
 // ============================================================
+// ============================================================
+// PRESUPUESTOS — PANEL CONTEXTUAL
+// ============================================================
+let pptoPanel = { tipo: null, id: null, nombre: null }; // 'cliente' | 'obra'
 let pptoItems = [];
 
 function recalcTotal() {
@@ -1478,29 +1505,55 @@ document.getElementById('btn-add-item').addEventListener('click', () => {
     renderPptoItems();
 });
 
-async function loadPresupuestos() {
-    const { data } = await sb.from('presupuestos')
-        .select('*, clientes(nombre), presupuesto_items(monto)')
+// Abrir panel de presupuestos para un cliente u obra
+async function openPptoPanel(tipo, id, nombre) {
+    pptoPanel = { tipo, id, nombre };
+    document.getElementById('ppto-panel-context').textContent = tipo === 'cliente' ? 'Cliente' : 'Obra';
+    document.getElementById('ppto-panel-title').textContent   = nombre;
+    document.getElementById('ppto-panel').style.display       = 'block';
+    document.body.style.overflow = 'hidden';
+    await loadPptoPanel();
+}
+
+function closePptoPanel(e) {
+    if (e && e.target !== document.getElementById('ppto-panel')) return;
+    document.getElementById('ppto-panel').style.display = 'none';
+    document.body.style.overflow = '';
+    // Refrescar la vista que originó el panel
+    if (pptoPanel.tipo === 'cliente') loadClientes();
+    if (pptoPanel.tipo === 'obra')    loadObras();
+    pptoPanel = { tipo: null, id: null, nombre: null };
+}
+
+async function loadPptoPanel() {
+    let query = sb.from('presupuestos')
+        .select('*, presupuesto_items(monto)')
         .order('created_at', { ascending: false });
-    document.getElementById('presupuestos-count').textContent = `${(data||[]).length} presupuesto(s)`;
+    if (pptoPanel.tipo === 'cliente') query = query.eq('cliente_id', pptoPanel.id);
+    if (pptoPanel.tipo === 'obra')    query = query.eq('obra_id',    pptoPanel.id);
+    const { data } = await query;
     const tbody = document.getElementById('presupuestos-tbody');
     if (!data || !data.length) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:40px">Sin presupuestos aún.</td></tr>';
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:40px">
+            Sin presupuestos aún. Hacé clic en "+ Nuevo presupuesto" para crear uno.
+        </td></tr>`;
         return;
     }
     tbody.innerHTML = data.map(p => {
-        const total = (p.presupuesto_items||[]).reduce((s,i)=>s+Number(i.monto||0),0);
-        return `
-        <tr>
+        const total = (p.presupuesto_items||[]).reduce((s,i) => s+Number(i.monto||0), 0);
+        const crearObraBtn = p.estado === 'aprobado'
+            ? `<button class="btn btn-green btn-sm" onclick="crearObraDesdePresupuesto('${p.id}')">→ Crear obra</button>`
+            : '';
+        return `<tr>
             <td>#${p.numero}</td>
             <td><strong>${p.titulo}</strong></td>
-            <td>${p.clientes?.nombre || '–'}</td>
             <td>${fmt$(total)}</td>
             <td>${estadoBadge(p.estado)}</td>
             <td>${fmtDate(p.created_at?.split('T')[0])}</td>
-            <td><div class="td-actions">
+            <td><div class="td-actions" style="flex-wrap:wrap">
                 <button class="btn btn-primary btn-sm" onclick="previewPdf('${p.id}')">PDF</button>
                 <button class="btn btn-ghost btn-sm" onclick="editPresupuesto('${p.id}')">Editar</button>
+                ${crearObraBtn}
                 <button class="btn btn-danger btn-sm" onclick="deletePresupuesto('${p.id}')">Eliminar</button>
             </div></td>
         </tr>`;
@@ -1508,20 +1561,45 @@ async function loadPresupuestos() {
 }
 
 document.getElementById('btn-nuevo-presupuesto').addEventListener('click', () => {
-    document.getElementById('ppto-id').value              = '';
-    document.getElementById('ppto-titulo').value          = '';
-    document.getElementById('ppto-condiciones').value     = '50% al inicio, 50% al finalizar';
-    document.getElementById('ppto-validez').value         = '30 días';
-    document.getElementById('ppto-nota-cliente').value    = 'Precios sin IVA. IVA a cargo del cliente.';
-    document.getElementById('ppto-nota-interna').value    = '';
-    document.getElementById('ppto-estado').value          = 'borrador';
+    document.getElementById('ppto-id').value           = '';
+    document.getElementById('ppto-titulo').value       = '';
+    document.getElementById('ppto-condiciones').value  = '50% al inicio, 50% al finalizar';
+    document.getElementById('ppto-validez').value      = '30 días';
+    document.getElementById('ppto-nota-cliente').value = 'Precios sin IVA. IVA a cargo del cliente.';
+    document.getElementById('ppto-nota-interna').value = '';
+    document.getElementById('ppto-estado').value       = 'borrador';
     pptoItems = [];
-    populateClienteSelect('ppto-cliente');
-    populateObraSelect('ppto-obra');
+    // Pre-llenar según contexto
+    populateClienteSelect('ppto-cliente', pptoPanel.tipo === 'cliente' ? pptoPanel.id : null);
+    populateObraSelect('ppto-obra',       pptoPanel.tipo === 'obra'    ? pptoPanel.id : null);
     renderPptoItems();
     document.getElementById('modal-ppto-title').textContent = 'Nuevo presupuesto';
     openModal('modal-presupuesto');
 });
+
+// Crear obra cuando el cliente aprueba un presupuesto
+async function crearObraDesdePresupuesto(pptoId) {
+    const { data: p } = await sb.from('presupuestos').select('*, clientes(nombre)').eq('id', pptoId).single();
+    if (!p) return;
+    // Marcar presupuesto como aprobado (por si no lo estaba)
+    await sb.from('presupuestos').update({ estado: 'aprobado' }).eq('id', pptoId);
+    // Pre-llenar modal de obra
+    document.getElementById('obra-id').value          = '';
+    document.getElementById('obra-titulo').value      = p.titulo;
+    document.getElementById('obra-descripcion').value = '';
+    document.getElementById('obra-direccion').value   = '';
+    document.getElementById('obra-notas').value       = `Generada desde presupuesto #${p.numero}`;
+    document.getElementById('obra-fecha-inicio').value = new Date().toISOString().split('T')[0];
+    document.getElementById('obra-fecha-fin').value   = '';
+    document.getElementById('obra-estado').value      = 'en_curso';
+    populateClienteSelect('obra-cliente', p.cliente_id);
+    document.getElementById('modal-obra-title').textContent = 'Nueva obra (desde presupuesto aprobado)';
+    // Cerrar panel y abrir modal obra
+    document.getElementById('ppto-panel').style.display = 'none';
+    document.body.style.overflow = '';
+    openModal('modal-obra');
+    toast('Presupuesto marcado como aprobado ✓');
+}
 
 async function editPresupuesto(id) {
     const { data } = await sb.from('presupuestos')
@@ -1581,7 +1659,7 @@ document.getElementById('btn-save-ppto').addEventListener('click', async () => {
     }
     closeModal('modal-presupuesto');
     toast('Presupuesto guardado ✓');
-    loadPresupuestos();
+    loadPptoPanel();
 });
 
 async function deletePresupuesto(id) {
@@ -1590,7 +1668,7 @@ async function deletePresupuesto(id) {
     const { error } = await sb.from('presupuestos').delete().eq('id',id);
     if (error) { toast('Error al eliminar','err'); return; }
     toast('Presupuesto eliminado');
-    loadPresupuestos();
+    loadPptoPanel();
 }
 
 // ============================================================
