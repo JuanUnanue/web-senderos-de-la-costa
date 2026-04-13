@@ -1,0 +1,1476 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Senderos de la Costa</title>
+<style>
+/* ============================================================
+   RESET & VARIABLES
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+    --ink:       #1a1a1a;
+    --ink-soft:  #252525;
+    --ink-mid:   #3a3a3a;
+    --border:    #2e2e2e;
+    --chalk:     #f5f3ef;
+    --chalk-dim: #bbb;
+    --muted:     #888;
+    --red:       #e8000b;
+    --red-hot:   #ff1a1f;
+    --green:     #22c55e;
+    --yellow:    #eab308;
+    --blue:      #3b82f6;
+    --font-head: 'Bebas Neue', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+    --sidebar-w: 220px;
+    --radius:    8px;
+}
+body { font-family: var(--font-body); background: var(--ink); color: var(--chalk); min-height: 100vh; }
+
+/* ============================================================
+   LOGIN SCREEN
+   ============================================================ */
+#login-screen {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh; padding: 24px;
+}
+.login-box {
+    background: var(--ink-soft); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 48px 40px; width: 100%; max-width: 400px;
+}
+.login-logo { font-family: var(--font-head); font-size: 1.5rem; letter-spacing: 1px; color: var(--red); margin-bottom: 8px; }
+.login-sub  { color: var(--muted); font-size: 0.85rem; margin-bottom: 32px; }
+.login-box h2 { font-size: 1.4rem; margin-bottom: 24px; }
+.login-error { background: rgba(232,0,11,0.15); border: 1px solid var(--red); color: #ff6b6b; border-radius: 6px; padding: 10px 14px; font-size: 0.85rem; margin-bottom: 16px; display: none; }
+
+/* ============================================================
+   APP SHELL
+   ============================================================ */
+#app { display: none; min-height: 100vh; }
+
+/* SIDEBAR */
+.sidebar {
+    position: fixed; top: 0; left: 0; bottom: 0;
+    width: var(--sidebar-w); background: var(--ink-soft);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    z-index: 100;
+}
+.sidebar-header {
+    padding: 24px 20px 20px;
+    border-bottom: 1px solid var(--border);
+}
+.sidebar-logo { font-family: var(--font-head); font-size: 1.1rem; color: var(--red); letter-spacing: 1px; }
+.sidebar-sub   { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+
+.nav-items { flex: 1; padding: 12px 0; }
+.nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 20px; cursor: pointer;
+    font-size: 0.88rem; color: var(--chalk-dim);
+    transition: all 0.15s;
+    border-left: 3px solid transparent;
+}
+.nav-item:hover { background: var(--ink-mid); color: var(--chalk); }
+.nav-item.active { background: rgba(232,0,11,0.08); color: var(--chalk); border-left-color: var(--red); }
+.nav-item .icon { font-size: 1rem; width: 20px; text-align: center; }
+
+.sidebar-footer {
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+}
+.btn-logout {
+    width: 100%; background: none; border: 1px solid var(--border);
+    color: var(--muted); border-radius: 6px; padding: 8px 12px;
+    font-size: 0.82rem; cursor: pointer; font-family: var(--font-body);
+    transition: all 0.15s;
+}
+.btn-logout:hover { border-color: var(--red); color: var(--red); }
+
+/* MAIN */
+.main-content {
+    margin-left: var(--sidebar-w);
+    padding: 32px 40px;
+    min-height: 100vh;
+}
+
+/* TOPBAR */
+.topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 32px;
+}
+.topbar-title { font-family: var(--font-head); font-size: 2rem; letter-spacing: 1px; }
+.topbar-sub { color: var(--muted); font-size: 0.85rem; margin-top: 2px; }
+
+/* VIEWS */
+.view { display: none; }
+.view.active { display: block; }
+
+/* ============================================================
+   COMMON COMPONENTS
+   ============================================================ */
+/* Cards */
+.card {
+    background: var(--ink-soft); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 24px;
+}
+
+/* Stats row */
+.stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 28px; }
+.stat-card {
+    background: var(--ink-soft); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px 24px;
+}
+.stat-label { font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.stat-value { font-family: var(--font-head); font-size: 2.2rem; margin-top: 4px; }
+.stat-value.green { color: var(--green); }
+.stat-value.red   { color: var(--red); }
+.stat-value.blue  { color: var(--blue); }
+
+/* Buttons */
+.btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 9px 18px; border-radius: 6px; font-family: var(--font-body);
+    font-size: 0.85rem; cursor: pointer; border: none; transition: all 0.15s;
+    text-decoration: none;
+}
+.btn-primary { background: var(--red); color: #fff; }
+.btn-primary:hover { background: var(--red-hot); }
+.btn-secondary { background: var(--ink-mid); color: var(--chalk); border: 1px solid var(--border); }
+.btn-secondary:hover { background: #444; }
+.btn-ghost { background: none; color: var(--chalk-dim); border: 1px solid var(--border); }
+.btn-ghost:hover { color: var(--chalk); border-color: #555; }
+.btn-danger { background: none; color: var(--red); border: 1px solid transparent; }
+.btn-danger:hover { background: rgba(232,0,11,0.1); border-color: var(--red); }
+.btn-sm { padding: 5px 12px; font-size: 0.78rem; }
+.btn-green { background: var(--green); color: #000; }
+.btn-green:hover { background: #16a34a; color: #fff; }
+
+/* Table */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+th {
+    text-align: left; padding: 10px 14px;
+    color: var(--muted); font-weight: 500;
+    font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border);
+}
+td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(255,255,255,0.02); }
+.td-actions { display: flex; gap: 6px; }
+
+/* Badges */
+.badge {
+    display: inline-block; padding: 3px 10px; border-radius: 20px;
+    font-size: 0.72rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.3px;
+}
+.badge-green    { background: rgba(34,197,94,0.15);  color: var(--green); }
+.badge-yellow   { background: rgba(234,179,8,0.15);  color: var(--yellow); }
+.badge-red      { background: rgba(232,0,11,0.15);   color: #ff6b6b; }
+.badge-blue     { background: rgba(59,130,246,0.15); color: var(--blue); }
+.badge-gray     { background: rgba(255,255,255,0.08); color: var(--chalk-dim); }
+
+/* Forms */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.form-grid.cols-1 { grid-template-columns: 1fr; }
+.form-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+.form-full { grid-column: 1 / -1; }
+.form-field { display: flex; flex-direction: column; gap: 6px; }
+.form-field label { font-size: 0.8rem; color: var(--chalk-dim); }
+.form-field input,
+.form-field textarea,
+.form-field select {
+    background: var(--ink); border: 1px solid var(--border);
+    border-radius: 6px; padding: 9px 12px; color: var(--chalk);
+    font-family: var(--font-body); font-size: 0.88rem;
+    transition: border-color 0.15s;
+}
+.form-field input:focus,
+.form-field textarea:focus,
+.form-field select:focus { outline: none; border-color: var(--red); }
+.form-field select option { background: var(--ink-mid); }
+.form-field textarea { resize: vertical; min-height: 80px; }
+.form-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 8px; }
+
+/* Modal */
+.modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000; padding: 24px; opacity: 0; pointer-events: none;
+    transition: opacity 0.2s;
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal {
+    background: var(--ink-soft); border: 1px solid var(--border);
+    border-radius: var(--radius); width: 100%; max-width: 600px;
+    max-height: 90vh; overflow-y: auto;
+    transform: translateY(8px); transition: transform 0.2s;
+}
+.modal-overlay.open .modal { transform: translateY(0); }
+.modal-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+}
+.modal-title { font-size: 1.05rem; font-weight: 600; }
+.modal-close { background: none; border: none; color: var(--muted); font-size: 1.2rem; cursor: pointer; padding: 4px 8px; border-radius: 4px; }
+.modal-close:hover { color: var(--chalk); background: var(--ink-mid); }
+.modal-body { padding: 24px; }
+.modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; }
+
+/* Section header */
+.section-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px; flex-wrap: wrap; gap: 12px;
+}
+.section-bar-left h2 { font-size: 1.15rem; }
+.section-bar-left p  { color: var(--muted); font-size: 0.82rem; margin-top: 2px; }
+
+/* Empty state */
+.empty-state {
+    text-align: center; padding: 60px 24px; color: var(--muted);
+}
+.empty-state .empty-icon { font-size: 2.5rem; margin-bottom: 12px; }
+.empty-state p { font-size: 0.9rem; }
+
+/* Loading */
+.loading-row td { text-align: center; color: var(--muted); padding: 40px; }
+
+/* Amounts */
+.amount-pos { color: var(--green); font-weight: 500; }
+.amount-neg { color: #ff6b6b; font-weight: 500; }
+
+/* Toast */
+#toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--ink-soft); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 12px 20px;
+    font-size: 0.88rem; z-index: 9999;
+    transform: translateY(80px); opacity: 0; transition: all 0.25s;
+    max-width: 320px;
+}
+#toast.show { transform: translateY(0); opacity: 1; }
+#toast.toast-ok  { border-color: var(--green); color: var(--green); }
+#toast.toast-err { border-color: var(--red);   color: #ff6b6b; }
+
+/* ============================================================
+   BUDGET ITEMS TABLE
+   ============================================================ */
+.items-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 8px; }
+.items-table th { background: var(--ink-mid); padding: 8px 10px; text-align: left; font-size: 0.75rem; color: var(--muted); }
+.items-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+.items-table input { width: 100%; background: none; border: none; color: var(--chalk); font-family: var(--font-body); font-size: 0.85rem; padding: 4px 0; }
+.items-table input:focus { outline: none; border-bottom: 1px solid var(--red); }
+.items-table .btn-rm { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 1rem; padding: 2px 6px; }
+.items-table .btn-rm:hover { color: var(--red); }
+.items-total { display: flex; justify-content: flex-end; padding: 12px 10px 0; font-size: 0.95rem; }
+.items-total strong { margin-left: 16px; font-size: 1.1rem; }
+
+/* ============================================================
+   PDF PREVIEW
+   ============================================================ */
+#pdf-preview {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+    z-index: 2000; display: none; overflow-y: auto; padding: 40px;
+}
+#pdf-preview.open { display: block; }
+.pdf-actions {
+    position: fixed; top: 16px; right: 16px; display: flex; gap: 10px; z-index: 2001;
+}
+.pdf-sheet {
+    background: #fff; color: #1a1a1a;
+    width: 210mm; max-width: 100%; margin: 0 auto;
+    padding: 20mm 18mm; font-family: Arial, sans-serif; font-size: 10pt;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+}
+.pdf-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #1a1a1a; padding-bottom: 16px; margin-bottom: 20px; }
+.pdf-company-name { font-size: 18pt; font-weight: bold; color: #e8000b; }
+.pdf-company-sub  { font-size: 9pt; color: #555; margin-top: 3px; }
+.pdf-doc-title    { text-align: right; }
+.pdf-doc-title h2 { font-size: 14pt; font-weight: bold; }
+.pdf-doc-title p  { font-size: 9pt; color: #555; }
+.pdf-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+.pdf-meta-block h4 { font-size: 8pt; text-transform: uppercase; color: #888; margin-bottom: 6px; letter-spacing: 0.5px; }
+.pdf-meta-block p  { font-size: 10pt; }
+.pdf-items-title { font-size: 11pt; font-weight: bold; border-bottom: 1px solid #ddd; padding-bottom: 6px; margin-bottom: 0; }
+.pdf-items-table { width: 100%; border-collapse: collapse; font-size: 9.5pt; }
+.pdf-items-table th { background: #f5f5f5; padding: 7px 10px; text-align: left; font-size: 8.5pt; color: #555; }
+.pdf-items-table th:last-child { text-align: right; }
+.pdf-items-table td { padding: 8px 10px; border-bottom: 1px solid #eee; }
+.pdf-items-table td:last-child { text-align: right; font-weight: 500; }
+.pdf-total-row { display: flex; justify-content: flex-end; margin-top: 12px; }
+.pdf-total-box { background: #1a1a1a; color: #fff; padding: 12px 20px; min-width: 220px; border-radius: 4px; }
+.pdf-total-box .lbl { font-size: 8.5pt; color: #aaa; text-transform: uppercase; letter-spacing: 0.5px; }
+.pdf-total-box .amt { font-size: 16pt; font-weight: bold; color: #e8000b; margin-top: 2px; }
+.pdf-note { margin-top: 16px; padding: 10px 14px; background: #fafafa; border-left: 3px solid #e8000b; font-size: 8.5pt; color: #555; }
+.pdf-conditions { margin-top: 20px; font-size: 9pt; }
+.pdf-conditions h4 { font-size: 8.5pt; text-transform: uppercase; letter-spacing: 0.5px; color: #888; margin-bottom: 8px; }
+.pdf-conditions .cond-row { display: flex; gap: 24px; flex-wrap: wrap; }
+.pdf-conditions .cond-item strong { display: block; font-size: 8.5pt; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+.pdf-footer { margin-top: 32px; padding-top: 12px; border-top: 1px solid #ddd; text-align: center; font-size: 8pt; color: #999; }
+
+@media print {
+    body * { visibility: hidden; }
+    #pdf-preview, #pdf-preview * { visibility: visible; }
+    #pdf-preview { position: absolute; top: 0; left: 0; padding: 0; background: none; }
+    .pdf-actions { display: none; }
+    .pdf-sheet { box-shadow: none; width: 100%; }
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 768px) {
+    :root { --sidebar-w: 0px; }
+    .sidebar { display: none; }
+    .main-content { margin-left: 0; padding: 20px; }
+    .form-grid { grid-template-columns: 1fr; }
+    .stats-row { grid-template-columns: 1fr 1fr; }
+}
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<!-- ============================================================
+     LOGIN SCREEN
+     ============================================================ -->
+<div id="login-screen">
+    <div class="login-box">
+        <div class="login-logo">Senderos de la Costa</div>
+        <div class="login-sub">Sistema de gestión · Acceso admin</div>
+        <h2>Iniciar sesión</h2>
+        <div class="login-error" id="login-error"></div>
+        <div class="form-field" style="margin-bottom:14px">
+            <label>Email</label>
+            <input type="email" id="login-email" placeholder="admin@ejemplo.com" autocomplete="email">
+        </div>
+        <div class="form-field" style="margin-bottom:24px">
+            <label>Contraseña</label>
+            <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <button class="btn btn-primary" style="width:100%;justify-content:center;padding:12px" id="btn-login">
+            Ingresar →
+        </button>
+    </div>
+</div>
+
+<!-- ============================================================
+     APP
+     ============================================================ -->
+<div id="app">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">Senderos de la Costa</div>
+            <div class="sidebar-sub">Panel de gestión</div>
+        </div>
+        <nav class="nav-items">
+            <div class="nav-item active" data-view="dashboard">
+                <span class="icon">▦</span> Dashboard
+            </div>
+            <div class="nav-item" data-view="clientes">
+                <span class="icon">◉</span> Clientes
+            </div>
+            <div class="nav-item" data-view="obras">
+                <span class="icon">◈</span> Obras
+            </div>
+            <div class="nav-item" data-view="presupuestos">
+                <span class="icon">◎</span> Presupuestos
+            </div>
+            <div class="nav-item" data-view="transacciones">
+                <span class="icon">$</span> Finanzas
+            </div>
+        </nav>
+        <div class="sidebar-footer">
+            <button class="btn-logout" id="btn-logout">Cerrar sesión</button>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main-content">
+
+        <!-- DASHBOARD -->
+        <div id="view-dashboard" class="view active">
+            <div class="topbar">
+                <div>
+                    <div class="topbar-title">Dashboard</div>
+                    <div class="topbar-sub" id="dash-date"></div>
+                </div>
+            </div>
+            <div class="stats-row" id="dash-stats">
+                <div class="stat-card"><div class="stat-label">Clientes</div><div class="stat-value blue" id="stat-clientes">–</div></div>
+                <div class="stat-card"><div class="stat-label">Obras activas</div><div class="stat-value" id="stat-obras">–</div></div>
+                <div class="stat-card"><div class="stat-label">Ingresos (mes)</div><div class="stat-value green" id="stat-ingresos">–</div></div>
+                <div class="stat-card"><div class="stat-label">Egresos (mes)</div><div class="stat-value red" id="stat-egresos">–</div></div>
+            </div>
+            <div class="card">
+                <h3 style="margin-bottom:16px;font-size:1rem">Obras recientes</h3>
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr><th>Obra</th><th>Cliente</th><th>Estado</th><th>Inicio</th></tr></thead>
+                        <tbody id="dash-obras-recientes">
+                            <tr class="loading-row"><td colspan="4">Cargando…</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- CLIENTES -->
+        <div id="view-clientes" class="view">
+            <div class="topbar">
+                <div><div class="topbar-title">Clientes</div></div>
+            </div>
+            <div class="section-bar">
+                <div class="section-bar-left">
+                    <h2>Todos los clientes</h2>
+                    <p id="clientes-count">Cargando…</p>
+                </div>
+                <button class="btn btn-primary" id="btn-nuevo-cliente">+ Nuevo cliente</button>
+            </div>
+            <div class="card">
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr><th>Nombre</th><th>Teléfono</th><th>Email</th><th>Obras</th><th>Acciones</th></tr></thead>
+                        <tbody id="clientes-tbody">
+                            <tr class="loading-row"><td colspan="5">Cargando…</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- OBRAS -->
+        <div id="view-obras" class="view">
+            <div class="topbar">
+                <div><div class="topbar-title">Obras</div></div>
+            </div>
+            <div class="section-bar">
+                <div class="section-bar-left">
+                    <h2>Todas las obras</h2>
+                    <p id="obras-count">Cargando…</p>
+                </div>
+                <button class="btn btn-primary" id="btn-nueva-obra">+ Nueva obra</button>
+            </div>
+            <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+                <button class="btn btn-ghost btn-sm filter-obra active" data-filter="all">Todas</button>
+                <button class="btn btn-ghost btn-sm filter-obra" data-filter="en_curso">En curso</button>
+                <button class="btn btn-ghost btn-sm filter-obra" data-filter="finalizada">Finalizadas</button>
+                <button class="btn btn-ghost btn-sm filter-obra" data-filter="pausada">Pausadas</button>
+            </div>
+            <div class="card">
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr><th>Obra</th><th>Cliente</th><th>Dirección</th><th>Estado</th><th>Inicio</th><th>Acciones</th></tr></thead>
+                        <tbody id="obras-tbody">
+                            <tr class="loading-row"><td colspan="6">Cargando…</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- PRESUPUESTOS -->
+        <div id="view-presupuestos" class="view">
+            <div class="topbar">
+                <div><div class="topbar-title">Presupuestos</div></div>
+            </div>
+            <div class="section-bar">
+                <div class="section-bar-left">
+                    <h2>Todos los presupuestos</h2>
+                    <p id="presupuestos-count">Cargando…</p>
+                </div>
+                <button class="btn btn-primary" id="btn-nuevo-presupuesto">+ Nuevo presupuesto</button>
+            </div>
+            <div class="card">
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr><th>N°</th><th>Título</th><th>Cliente</th><th>Total</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr></thead>
+                        <tbody id="presupuestos-tbody">
+                            <tr class="loading-row"><td colspan="7">Cargando…</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TRANSACCIONES -->
+        <div id="view-transacciones" class="view">
+            <div class="topbar">
+                <div><div class="topbar-title">Finanzas</div></div>
+            </div>
+            <div class="stats-row" id="finanzas-stats">
+                <div class="stat-card"><div class="stat-label">Ingresos totales</div><div class="stat-value green" id="fin-ingresos">–</div></div>
+                <div class="stat-card"><div class="stat-label">Egresos totales</div><div class="stat-value red" id="fin-egresos">–</div></div>
+                <div class="stat-card"><div class="stat-label">Balance</div><div class="stat-value" id="fin-balance">–</div></div>
+            </div>
+            <div class="section-bar">
+                <div class="section-bar-left">
+                    <h2>Movimientos</h2>
+                </div>
+                <div style="display:flex;gap:8px">
+                    <button class="btn btn-green btn-sm" id="btn-ingreso">+ Ingreso</button>
+                    <button class="btn btn-danger btn-sm" style="background:rgba(232,0,11,0.12)" id="btn-egreso">− Egreso</button>
+                </div>
+            </div>
+            <div class="card">
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr><th>Fecha</th><th>Tipo</th><th>Descripción</th><th>Obra</th><th>Monto</th><th>Acciones</th></tr></thead>
+                        <tbody id="trans-tbody">
+                            <tr class="loading-row"><td colspan="6">Cargando…</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<!-- ============================================================
+     MODALS
+     ============================================================ -->
+
+<!-- MODAL CLIENTE -->
+<div class="modal-overlay" id="modal-cliente">
+    <div class="modal" style="max-width:500px">
+        <div class="modal-header">
+            <span class="modal-title" id="modal-cliente-title">Nuevo cliente</span>
+            <button class="modal-close" data-close="modal-cliente">✕</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="cliente-id">
+            <div class="form-grid cols-1">
+                <div class="form-field">
+                    <label>Nombre *</label>
+                    <input type="text" id="cliente-nombre" placeholder="Nombre completo o razón social">
+                </div>
+            </div>
+            <div class="form-grid" style="margin-top:14px">
+                <div class="form-field">
+                    <label>Teléfono</label>
+                    <input type="tel" id="cliente-telefono" placeholder="223 000-0000">
+                </div>
+                <div class="form-field">
+                    <label>Email</label>
+                    <input type="email" id="cliente-email" placeholder="correo@ejemplo.com">
+                </div>
+            </div>
+            <div class="form-grid cols-1" style="margin-top:14px">
+                <div class="form-field">
+                    <label>Dirección</label>
+                    <input type="text" id="cliente-direccion" placeholder="Calle y número">
+                </div>
+                <div class="form-field" style="margin-top:14px">
+                    <label>Notas internas</label>
+                    <textarea id="cliente-notas" placeholder="Observaciones…"></textarea>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" data-close="modal-cliente">Cancelar</button>
+            <button class="btn btn-primary" id="btn-save-cliente">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL OBRA -->
+<div class="modal-overlay" id="modal-obra">
+    <div class="modal" style="max-width:620px">
+        <div class="modal-header">
+            <span class="modal-title" id="modal-obra-title">Nueva obra</span>
+            <button class="modal-close" data-close="modal-obra">✕</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="obra-id">
+            <div class="form-grid cols-1">
+                <div class="form-field">
+                    <label>Título *</label>
+                    <input type="text" id="obra-titulo" placeholder="Ej: Techo galpón Industrial Norte">
+                </div>
+            </div>
+            <div class="form-grid" style="margin-top:14px">
+                <div class="form-field">
+                    <label>Cliente</label>
+                    <select id="obra-cliente"></select>
+                </div>
+                <div class="form-field">
+                    <label>Estado</label>
+                    <select id="obra-estado">
+                        <option value="en_curso">En curso</option>
+                        <option value="finalizada">Finalizada</option>
+                        <option value="pausada">Pausada</option>
+                        <option value="cancelada">Cancelada</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-grid" style="margin-top:14px">
+                <div class="form-field">
+                    <label>Fecha inicio</label>
+                    <input type="date" id="obra-fecha-inicio">
+                </div>
+                <div class="form-field">
+                    <label>Fecha fin estimada</label>
+                    <input type="date" id="obra-fecha-fin">
+                </div>
+            </div>
+            <div class="form-grid cols-1" style="margin-top:14px">
+                <div class="form-field">
+                    <label>Dirección de la obra</label>
+                    <input type="text" id="obra-direccion" placeholder="Calle y número">
+                </div>
+                <div class="form-field" style="margin-top:14px">
+                    <label>Descripción</label>
+                    <textarea id="obra-descripcion" placeholder="Descripción de la obra…"></textarea>
+                </div>
+                <div class="form-field" style="margin-top:14px">
+                    <label>Notas internas</label>
+                    <textarea id="obra-notas" placeholder="Observaciones…"></textarea>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" data-close="modal-obra">Cancelar</button>
+            <button class="btn btn-primary" id="btn-save-obra">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL PRESUPUESTO -->
+<div class="modal-overlay" id="modal-presupuesto">
+    <div class="modal" style="max-width:760px">
+        <div class="modal-header">
+            <span class="modal-title" id="modal-ppto-title">Nuevo presupuesto</span>
+            <button class="modal-close" data-close="modal-presupuesto">✕</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="ppto-id">
+            <div class="form-grid" style="margin-bottom:14px">
+                <div class="form-field">
+                    <label>Título *</label>
+                    <input type="text" id="ppto-titulo" placeholder="Ej: Presupuesto cubierta metálica">
+                </div>
+                <div class="form-field">
+                    <label>Cliente</label>
+                    <select id="ppto-cliente"></select>
+                </div>
+            </div>
+            <div class="form-grid" style="margin-bottom:14px">
+                <div class="form-field">
+                    <label>Obra (opcional)</label>
+                    <select id="ppto-obra"></select>
+                </div>
+                <div class="form-field">
+                    <label>Estado</label>
+                    <select id="ppto-estado">
+                        <option value="borrador">Borrador</option>
+                        <option value="enviado">Enviado</option>
+                        <option value="aprobado">Aprobado</option>
+                        <option value="rechazado">Rechazado</option>
+                    </select>
+                </div>
+            </div>
+
+            <hr style="border-color:var(--border);margin:16px 0">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                <h4 style="font-size:0.9rem">Ítems del presupuesto</h4>
+                <button class="btn btn-ghost btn-sm" id="btn-add-item">+ Agregar ítem</button>
+            </div>
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th style="width:45%">Descripción</th>
+                        <th style="width:18%">Monto ($)</th>
+                        <th style="width:16%">Mat. int. ($)</th>
+                        <th style="width:16%">M.O. int. ($)</th>
+                        <th style="width:5%"></th>
+                    </tr>
+                </thead>
+                <tbody id="ppto-items-tbody"></tbody>
+            </table>
+            <div class="items-total">
+                Total: <strong id="ppto-total">$ 0</strong>
+            </div>
+
+            <hr style="border-color:var(--border);margin:16px 0">
+            <div class="form-grid" style="margin-bottom:14px">
+                <div class="form-field">
+                    <label>Condiciones de pago</label>
+                    <input type="text" id="ppto-condiciones" placeholder="50% al inicio, 50% al finalizar">
+                </div>
+                <div class="form-field">
+                    <label>Validez de la oferta</label>
+                    <input type="text" id="ppto-validez" placeholder="30 días">
+                </div>
+            </div>
+            <div class="form-grid cols-1">
+                <div class="form-field">
+                    <label>Nota para el cliente (aparece en el PDF)</label>
+                    <textarea id="ppto-nota-cliente" rows="2" placeholder="Precios sin IVA. IVA a cargo del cliente."></textarea>
+                </div>
+                <div class="form-field" style="margin-top:12px">
+                    <label>Notas internas (no aparecen en el PDF)</label>
+                    <textarea id="ppto-nota-interna" rows="2" placeholder="Observaciones internas…"></textarea>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" data-close="modal-presupuesto">Cancelar</button>
+            <button class="btn btn-primary" id="btn-save-ppto">Guardar presupuesto</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL TRANSACCIÓN -->
+<div class="modal-overlay" id="modal-trans">
+    <div class="modal" style="max-width:480px">
+        <div class="modal-header">
+            <span class="modal-title" id="modal-trans-title">Nueva transacción</span>
+            <button class="modal-close" data-close="modal-trans">✕</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="trans-id">
+            <input type="hidden" id="trans-tipo">
+            <div class="form-grid cols-1">
+                <div class="form-field">
+                    <label>Descripción *</label>
+                    <input type="text" id="trans-descripcion" placeholder="Ej: Pago cliente, Compra materiales…">
+                </div>
+            </div>
+            <div class="form-grid" style="margin-top:14px">
+                <div class="form-field">
+                    <label>Monto ($) *</label>
+                    <input type="number" id="trans-monto" placeholder="0.00" step="0.01" min="0">
+                </div>
+                <div class="form-field">
+                    <label>Fecha</label>
+                    <input type="date" id="trans-fecha">
+                </div>
+            </div>
+            <div class="form-grid" style="margin-top:14px">
+                <div class="form-field">
+                    <label>Obra (opcional)</label>
+                    <select id="trans-obra"></select>
+                </div>
+                <div class="form-field">
+                    <label>Categoría</label>
+                    <input type="text" id="trans-categoria" placeholder="Ej: Materiales, Mano de obra…">
+                </div>
+            </div>
+            <div class="form-grid cols-1" style="margin-top:14px">
+                <div class="form-field">
+                    <label>Comprobante / N° factura</label>
+                    <input type="text" id="trans-comprobante" placeholder="Opcional">
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" data-close="modal-trans">Cancelar</button>
+            <button class="btn btn-primary" id="btn-save-trans">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- PDF PREVIEW -->
+<div id="pdf-preview">
+    <div class="pdf-actions">
+        <button class="btn btn-primary" onclick="window.print()">🖨 Imprimir / Guardar PDF</button>
+        <button class="btn btn-secondary" onclick="closePdf()">✕ Cerrar</button>
+    </div>
+    <div class="pdf-sheet" id="pdf-sheet"></div>
+</div>
+
+<!-- ============================================================
+     SCRIPTS
+     ============================================================ -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ============================================================
+// CONFIG
+// ============================================================
+const SUPABASE_URL = 'https://sjxkluftmrhgldbovphk.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_-rRvccEk5X7IU3Kif2WgrQ_jrvjU_TY';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ============================================================
+// AUTH
+// ============================================================
+async function checkAuth() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) showApp();
+    else showLogin();
+}
+
+function showLogin() {
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+}
+function showApp() {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    initApp();
+}
+
+document.getElementById('btn-login').addEventListener('click', async () => {
+    const email    = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    const errEl    = document.getElementById('login-error');
+    errEl.style.display = 'none';
+    if (!email || !password) { errEl.textContent = 'Completá email y contraseña.'; errEl.style.display = 'block'; return; }
+    const btn = document.getElementById('btn-login');
+    btn.textContent = 'Ingresando…'; btn.disabled = true;
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    btn.textContent = 'Ingresar →'; btn.disabled = false;
+    if (error) { errEl.textContent = 'Email o contraseña incorrectos.'; errEl.style.display = 'block'; }
+    else showApp();
+});
+
+document.getElementById('login-password').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('btn-login').click();
+});
+
+document.getElementById('btn-logout').addEventListener('click', async () => {
+    await sb.auth.signOut();
+    showLogin();
+});
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+let currentView = 'dashboard';
+
+document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+        const view = item.dataset.view;
+        navigate(view);
+    });
+});
+
+function navigate(view) {
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.toggle('active', i.dataset.view === view));
+    document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + view));
+    currentView = view;
+    if (view === 'dashboard')     loadDashboard();
+    if (view === 'clientes')      loadClientes();
+    if (view === 'obras')         loadObras();
+    if (view === 'presupuestos')  loadPresupuestos();
+    if (view === 'transacciones') loadTransacciones();
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+function toast(msg, type = 'ok') {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = `show toast-${type}`;
+    setTimeout(() => el.className = '', 3000);
+}
+
+// ============================================================
+// FORMAT HELPERS
+// ============================================================
+function fmt$(n) { return '$ ' + Number(n || 0).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }); }
+function fmtDate(d) { if (!d) return '–'; const [y,m,day] = d.split('-'); return `${day}/${m}/${y}`; }
+function estadoBadge(e) {
+    const map = {
+        en_curso:  ['badge-blue','En curso'],
+        finalizada:['badge-green','Finalizada'],
+        pausada:   ['badge-yellow','Pausada'],
+        cancelada: ['badge-red','Cancelada'],
+        borrador:  ['badge-gray','Borrador'],
+        enviado:   ['badge-blue','Enviado'],
+        aprobado:  ['badge-green','Aprobado'],
+        rechazado: ['badge-red','Rechazado'],
+    };
+    const [cls, label] = map[e] || ['badge-gray', e];
+    return `<span class="badge ${cls}">${label}</span>`;
+}
+
+// ============================================================
+// MODALS
+// ============================================================
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('[data-close]').forEach(el => {
+    el.addEventListener('click', () => closeModal(el.dataset.close));
+});
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(overlay.id); });
+});
+
+// ============================================================
+// INIT APP
+// ============================================================
+let allClientes = [];
+let allObras    = [];
+
+async function initApp() {
+    document.getElementById('dash-date').textContent = new Date().toLocaleDateString('es-AR', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+    await refreshCache();
+    loadDashboard();
+}
+
+async function refreshCache() {
+    const [{ data: c }, { data: o }] = await Promise.all([
+        sb.from('clientes').select('id,nombre').order('nombre'),
+        sb.from('obras').select('id,titulo,cliente_id').order('titulo'),
+    ]);
+    allClientes = c || [];
+    allObras    = o || [];
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+async function loadDashboard() {
+    // Stats
+    const now = new Date();
+    const mesInicio = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
+    const [
+        { count: cc },
+        { count: oc },
+        { data: tin },
+        { data: teg }
+    ] = await Promise.all([
+        sb.from('clientes').select('*', { count:'exact', head:true }),
+        sb.from('obras').select('*', { count:'exact', head:true }).eq('estado','en_curso'),
+        sb.from('transacciones').select('monto').eq('tipo','ingreso').gte('fecha', mesInicio),
+        sb.from('transacciones').select('monto').eq('tipo','egreso').gte('fecha', mesInicio),
+    ]);
+    document.getElementById('stat-clientes').textContent = cc || 0;
+    document.getElementById('stat-obras').textContent    = oc || 0;
+    document.getElementById('stat-ingresos').textContent = fmt$((tin||[]).reduce((s,t)=>s+Number(t.monto),0));
+    document.getElementById('stat-egresos').textContent  = fmt$((teg||[]).reduce((s,t)=>s+Number(t.monto),0));
+
+    // Obras recientes
+    const { data: obras } = await sb.from('obras')
+        .select('titulo, estado, fecha_inicio, clientes(nombre)')
+        .order('created_at', { ascending: false }).limit(8);
+    const tbody = document.getElementById('dash-obras-recientes');
+    if (!obras || !obras.length) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:30px">Sin obras registradas aún</td></tr>';
+        return;
+    }
+    tbody.innerHTML = obras.map(o => `
+        <tr>
+            <td>${o.titulo}</td>
+            <td>${o.clientes?.nombre || '–'}</td>
+            <td>${estadoBadge(o.estado)}</td>
+            <td>${fmtDate(o.fecha_inicio)}</td>
+        </tr>
+    `).join('');
+}
+
+// ============================================================
+// CLIENTES
+// ============================================================
+async function loadClientes() {
+    const { data } = await sb.from('clientes').select('*, obras(id)').order('nombre');
+    document.getElementById('clientes-count').textContent = `${(data||[]).length} clientes`;
+    const tbody = document.getElementById('clientes-tbody');
+    if (!data || !data.length) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:40px">Sin clientes aún. Agregá el primero.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = data.map(c => `
+        <tr>
+            <td><strong>${c.nombre}</strong></td>
+            <td>${c.telefono || '–'}</td>
+            <td>${c.email || '–'}</td>
+            <td>${(c.obras||[]).length} obra(s)</td>
+            <td><div class="td-actions">
+                <button class="btn btn-ghost btn-sm" onclick="editCliente('${c.id}')">Editar</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteCliente('${c.id}','${c.nombre.replace(/'/g,'\\\'') }')">Eliminar</button>
+            </div></td>
+        </tr>
+    `).join('');
+}
+
+document.getElementById('btn-nuevo-cliente').addEventListener('click', () => {
+    document.getElementById('cliente-id').value = '';
+    document.getElementById('cliente-nombre').value    = '';
+    document.getElementById('cliente-telefono').value  = '';
+    document.getElementById('cliente-email').value     = '';
+    document.getElementById('cliente-direccion').value = '';
+    document.getElementById('cliente-notas').value     = '';
+    document.getElementById('modal-cliente-title').textContent = 'Nuevo cliente';
+    openModal('modal-cliente');
+});
+
+async function editCliente(id) {
+    const { data } = await sb.from('clientes').select('*').eq('id',id).single();
+    if (!data) return;
+    document.getElementById('cliente-id').value        = data.id;
+    document.getElementById('cliente-nombre').value    = data.nombre || '';
+    document.getElementById('cliente-telefono').value  = data.telefono || '';
+    document.getElementById('cliente-email').value     = data.email || '';
+    document.getElementById('cliente-direccion').value = data.direccion || '';
+    document.getElementById('cliente-notas').value     = data.notas || '';
+    document.getElementById('modal-cliente-title').textContent = 'Editar cliente';
+    openModal('modal-cliente');
+}
+
+document.getElementById('btn-save-cliente').addEventListener('click', async () => {
+    const id     = document.getElementById('cliente-id').value;
+    const nombre = document.getElementById('cliente-nombre').value.trim();
+    if (!nombre) { toast('El nombre es obligatorio','err'); return; }
+    const payload = {
+        nombre,
+        telefono:  document.getElementById('cliente-telefono').value.trim() || null,
+        email:     document.getElementById('cliente-email').value.trim() || null,
+        direccion: document.getElementById('cliente-direccion').value.trim() || null,
+        notas:     document.getElementById('cliente-notas').value.trim() || null,
+    };
+    let err;
+    if (id) ({ error: err } = await sb.from('clientes').update(payload).eq('id',id));
+    else    ({ error: err } = await sb.from('clientes').insert(payload));
+    if (err) { toast('Error al guardar','err'); return; }
+    closeModal('modal-cliente');
+    toast('Cliente guardado ✓');
+    await refreshCache();
+    loadClientes();
+});
+
+async function deleteCliente(id, nombre) {
+    if (!confirm(`¿Eliminar cliente "${nombre}"? Se quitará la referencia de sus obras.`)) return;
+    const { error } = await sb.from('clientes').delete().eq('id',id);
+    if (error) { toast('Error al eliminar','err'); return; }
+    toast('Cliente eliminado');
+    await refreshCache();
+    loadClientes();
+}
+
+// ============================================================
+// OBRAS
+// ============================================================
+let obrasFilter = 'all';
+
+document.querySelectorAll('.filter-obra').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-obra').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        obrasFilter = btn.dataset.filter;
+        loadObras();
+    });
+});
+
+async function loadObras() {
+    let query = sb.from('obras').select('*, clientes(nombre)').order('created_at', { ascending: false });
+    if (obrasFilter !== 'all') query = query.eq('estado', obrasFilter);
+    const { data } = await query;
+    document.getElementById('obras-count').textContent = `${(data||[]).length} obra(s)`;
+    const tbody = document.getElementById('obras-tbody');
+    if (!data || !data.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:40px">Sin obras en esta categoría.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = data.map(o => `
+        <tr>
+            <td><strong>${o.titulo}</strong></td>
+            <td>${o.clientes?.nombre || '–'}</td>
+            <td>${o.direccion || '–'}</td>
+            <td>${estadoBadge(o.estado)}</td>
+            <td>${fmtDate(o.fecha_inicio)}</td>
+            <td><div class="td-actions">
+                <button class="btn btn-ghost btn-sm" onclick="editObra('${o.id}')">Editar</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteObra('${o.id}','${o.titulo.replace(/'/g,'\\\'') }')">Eliminar</button>
+            </div></td>
+        </tr>
+    `).join('');
+}
+
+function populateClienteSelect(selectId, selectedId = null) {
+    const sel = document.getElementById(selectId);
+    sel.innerHTML = '<option value="">Sin cliente</option>' +
+        allClientes.map(c => `<option value="${c.id}" ${c.id===selectedId?'selected':''}>${c.nombre}</option>`).join('');
+}
+function populateObraSelect(selectId, selectedId = null, includeNone = true) {
+    const sel = document.getElementById(selectId);
+    sel.innerHTML = (includeNone ? '<option value="">Sin obra</option>' : '') +
+        allObras.map(o => `<option value="${o.id}" ${o.id===selectedId?'selected':''}>${o.titulo}</option>`).join('');
+}
+
+document.getElementById('btn-nueva-obra').addEventListener('click', () => {
+    document.getElementById('obra-id').value          = '';
+    document.getElementById('obra-titulo').value      = '';
+    document.getElementById('obra-descripcion').value = '';
+    document.getElementById('obra-direccion').value   = '';
+    document.getElementById('obra-notas').value       = '';
+    document.getElementById('obra-fecha-inicio').value = '';
+    document.getElementById('obra-fecha-fin').value   = '';
+    document.getElementById('obra-estado').value      = 'en_curso';
+    populateClienteSelect('obra-cliente');
+    document.getElementById('modal-obra-title').textContent = 'Nueva obra';
+    openModal('modal-obra');
+});
+
+async function editObra(id) {
+    const { data } = await sb.from('obras').select('*').eq('id',id).single();
+    if (!data) return;
+    document.getElementById('obra-id').value          = data.id;
+    document.getElementById('obra-titulo').value      = data.titulo || '';
+    document.getElementById('obra-descripcion').value = data.descripcion || '';
+    document.getElementById('obra-direccion').value   = data.direccion || '';
+    document.getElementById('obra-notas').value       = data.notas || '';
+    document.getElementById('obra-fecha-inicio').value = data.fecha_inicio || '';
+    document.getElementById('obra-fecha-fin').value   = data.fecha_fin || '';
+    document.getElementById('obra-estado').value      = data.estado || 'en_curso';
+    populateClienteSelect('obra-cliente', data.cliente_id);
+    document.getElementById('modal-obra-title').textContent = 'Editar obra';
+    openModal('modal-obra');
+}
+
+document.getElementById('btn-save-obra').addEventListener('click', async () => {
+    const id     = document.getElementById('obra-id').value;
+    const titulo = document.getElementById('obra-titulo').value.trim();
+    if (!titulo) { toast('El título es obligatorio','err'); return; }
+    const payload = {
+        titulo,
+        cliente_id:   document.getElementById('obra-cliente').value || null,
+        estado:       document.getElementById('obra-estado').value,
+        fecha_inicio: document.getElementById('obra-fecha-inicio').value || null,
+        fecha_fin:    document.getElementById('obra-fecha-fin').value || null,
+        direccion:    document.getElementById('obra-direccion').value.trim() || null,
+        descripcion:  document.getElementById('obra-descripcion').value.trim() || null,
+        notas:        document.getElementById('obra-notas').value.trim() || null,
+    };
+    let err;
+    if (id) ({ error: err } = await sb.from('obras').update(payload).eq('id',id));
+    else    ({ error: err } = await sb.from('obras').insert(payload));
+    if (err) { toast('Error al guardar','err'); return; }
+    closeModal('modal-obra');
+    toast('Obra guardada ✓');
+    await refreshCache();
+    loadObras();
+});
+
+async function deleteObra(id, titulo) {
+    if (!confirm(`¿Eliminar obra "${titulo}"?`)) return;
+    const { error } = await sb.from('obras').delete().eq('id',id);
+    if (error) { toast('Error al eliminar','err'); return; }
+    toast('Obra eliminada');
+    await refreshCache();
+    loadObras();
+}
+
+// ============================================================
+// PRESUPUESTOS
+// ============================================================
+let pptoItems = [];
+
+function recalcTotal() {
+    const total = pptoItems.reduce((s,it) => s + Number(it.monto||0), 0);
+    document.getElementById('ppto-total').textContent = fmt$(total);
+}
+
+function renderPptoItems() {
+    const tbody = document.getElementById('ppto-items-tbody');
+    if (!pptoItems.length) {
+        tbody.innerHTML = '<tr><td colspan="5" style="color:var(--muted);padding:12px 10px">Sin ítems. Hacé clic en "+ Agregar ítem".</td></tr>';
+        return;
+    }
+    tbody.innerHTML = pptoItems.map((it, idx) => `
+        <tr>
+            <td><input type="text" value="${it.descripcion||''}" placeholder="Descripción del ítem" oninput="pptoItems[${idx}].descripcion=this.value"></td>
+            <td><input type="number" value="${it.monto||''}" placeholder="0" step="0.01" oninput="pptoItems[${idx}].monto=Number(this.value);recalcTotal()"></td>
+            <td><input type="number" value="${it.costo_materiales||''}" placeholder="0" step="0.01" oninput="pptoItems[${idx}].costo_materiales=Number(this.value)"></td>
+            <td><input type="number" value="${it.costo_mano_obra||''}" placeholder="0" step="0.01" oninput="pptoItems[${idx}].costo_mano_obra=Number(this.value)"></td>
+            <td><button class="btn-rm" onclick="removeItem(${idx})">✕</button></td>
+        </tr>
+    `).join('');
+    recalcTotal();
+}
+
+function removeItem(idx) {
+    pptoItems.splice(idx, 1);
+    renderPptoItems();
+}
+
+document.getElementById('btn-add-item').addEventListener('click', () => {
+    pptoItems.push({ descripcion:'', monto:0, costo_materiales:null, costo_mano_obra:null, orden: pptoItems.length });
+    renderPptoItems();
+});
+
+async function loadPresupuestos() {
+    const { data } = await sb.from('presupuestos')
+        .select('*, clientes(nombre), presupuesto_items(monto)')
+        .order('created_at', { ascending: false });
+    document.getElementById('presupuestos-count').textContent = `${(data||[]).length} presupuesto(s)`;
+    const tbody = document.getElementById('presupuestos-tbody');
+    if (!data || !data.length) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:40px">Sin presupuestos aún.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = data.map(p => {
+        const total = (p.presupuesto_items||[]).reduce((s,i)=>s+Number(i.monto||0),0);
+        return `
+        <tr>
+            <td>#${p.numero}</td>
+            <td><strong>${p.titulo}</strong></td>
+            <td>${p.clientes?.nombre || '–'}</td>
+            <td>${fmt$(total)}</td>
+            <td>${estadoBadge(p.estado)}</td>
+            <td>${fmtDate(p.created_at?.split('T')[0])}</td>
+            <td><div class="td-actions">
+                <button class="btn btn-primary btn-sm" onclick="previewPdf('${p.id}')">PDF</button>
+                <button class="btn btn-ghost btn-sm" onclick="editPresupuesto('${p.id}')">Editar</button>
+                <button class="btn btn-danger btn-sm" onclick="deletePresupuesto('${p.id}')">Eliminar</button>
+            </div></td>
+        </tr>`;
+    }).join('');
+}
+
+document.getElementById('btn-nuevo-presupuesto').addEventListener('click', () => {
+    document.getElementById('ppto-id').value              = '';
+    document.getElementById('ppto-titulo').value          = '';
+    document.getElementById('ppto-condiciones').value     = '50% al inicio, 50% al finalizar';
+    document.getElementById('ppto-validez').value         = '30 días';
+    document.getElementById('ppto-nota-cliente').value    = 'Precios sin IVA. IVA a cargo del cliente.';
+    document.getElementById('ppto-nota-interna').value    = '';
+    document.getElementById('ppto-estado').value          = 'borrador';
+    pptoItems = [];
+    populateClienteSelect('ppto-cliente');
+    populateObraSelect('ppto-obra');
+    renderPptoItems();
+    document.getElementById('modal-ppto-title').textContent = 'Nuevo presupuesto';
+    openModal('modal-presupuesto');
+});
+
+async function editPresupuesto(id) {
+    const { data } = await sb.from('presupuestos')
+        .select('*, presupuesto_items(*)').eq('id',id).single();
+    if (!data) return;
+    document.getElementById('ppto-id').value              = data.id;
+    document.getElementById('ppto-titulo').value          = data.titulo || '';
+    document.getElementById('ppto-condiciones').value     = data.condiciones || '';
+    document.getElementById('ppto-validez').value         = data.validez || '';
+    document.getElementById('ppto-nota-cliente').value    = data.notas_cliente || '';
+    document.getElementById('ppto-nota-interna').value    = data.notas_internas || '';
+    document.getElementById('ppto-estado').value          = data.estado || 'borrador';
+    pptoItems = (data.presupuesto_items || []).sort((a,b)=>a.orden-b.orden);
+    populateClienteSelect('ppto-cliente', data.cliente_id);
+    populateObraSelect('ppto-obra', data.obra_id);
+    renderPptoItems();
+    document.getElementById('modal-ppto-title').textContent = 'Editar presupuesto';
+    openModal('modal-presupuesto');
+}
+
+document.getElementById('btn-save-ppto').addEventListener('click', async () => {
+    const id     = document.getElementById('ppto-id').value;
+    const titulo = document.getElementById('ppto-titulo').value.trim();
+    if (!titulo) { toast('El título es obligatorio','err'); return; }
+    const payload = {
+        titulo,
+        cliente_id:     document.getElementById('ppto-cliente').value || null,
+        obra_id:        document.getElementById('ppto-obra').value || null,
+        condiciones:    document.getElementById('ppto-condiciones').value.trim(),
+        validez:        document.getElementById('ppto-validez').value.trim(),
+        notas_cliente:  document.getElementById('ppto-nota-cliente').value.trim(),
+        notas_internas: document.getElementById('ppto-nota-interna').value.trim() || null,
+        estado:         document.getElementById('ppto-estado').value,
+    };
+    let pptoId = id;
+    if (id) {
+        const { error } = await sb.from('presupuestos').update(payload).eq('id',id);
+        if (error) { toast('Error al guardar','err'); return; }
+    } else {
+        const { data, error } = await sb.from('presupuestos').insert(payload).select().single();
+        if (error) { toast('Error al guardar','err'); return; }
+        pptoId = data.id;
+    }
+    // Save items
+    await sb.from('presupuesto_items').delete().eq('presupuesto_id', pptoId);
+    if (pptoItems.length) {
+        const items = pptoItems.map((it,i) => ({
+            presupuesto_id:   pptoId,
+            descripcion:      it.descripcion,
+            monto:            Number(it.monto||0),
+            costo_materiales: it.costo_materiales ? Number(it.costo_materiales) : null,
+            costo_mano_obra:  it.costo_mano_obra  ? Number(it.costo_mano_obra)  : null,
+            orden: i
+        }));
+        const { error } = await sb.from('presupuesto_items').insert(items);
+        if (error) { toast('Error al guardar ítems','err'); return; }
+    }
+    closeModal('modal-presupuesto');
+    toast('Presupuesto guardado ✓');
+    loadPresupuestos();
+});
+
+async function deletePresupuesto(id) {
+    if (!confirm('¿Eliminar este presupuesto?')) return;
+    await sb.from('presupuesto_items').delete().eq('presupuesto_id', id);
+    const { error } = await sb.from('presupuestos').delete().eq('id',id);
+    if (error) { toast('Error al eliminar','err'); return; }
+    toast('Presupuesto eliminado');
+    loadPresupuestos();
+}
+
+// ============================================================
+// PDF
+// ============================================================
+async function previewPdf(id) {
+    const { data } = await sb.from('presupuestos')
+        .select('*, clientes(*), obras(*), presupuesto_items(*)')
+        .eq('id', id).single();
+    if (!data) return;
+    const items  = (data.presupuesto_items||[]).sort((a,b)=>a.orden-b.orden);
+    const total  = items.reduce((s,i) => s + Number(i.monto||0), 0);
+    const hoy    = new Date().toLocaleDateString('es-AR');
+    const sheet  = document.getElementById('pdf-sheet');
+    sheet.innerHTML = `
+        <div class="pdf-header">
+            <div>
+                <div class="pdf-company-name">Senderos de la Costa</div>
+                <div class="pdf-company-sub">Constructora · Mar del Plata, Buenos Aires<br>Tel: +54 223 522-3702 · senderosdelacosta@hotmail.com</div>
+            </div>
+            <div class="pdf-doc-title">
+                <h2>PRESUPUESTO</h2>
+                <p>N° ${data.numero} · ${hoy}</p>
+                <p style="margin-top:4px;color:#888">Validez: ${data.validez || '30 días'}</p>
+            </div>
+        </div>
+        <div class="pdf-meta">
+            <div class="pdf-meta-block">
+                <h4>Cliente</h4>
+                <p><strong>${data.clientes?.nombre || '–'}</strong></p>
+                ${data.clientes?.telefono ? `<p>${data.clientes.telefono}</p>` : ''}
+                ${data.clientes?.email    ? `<p>${data.clientes.email}</p>`    : ''}
+                ${data.clientes?.direccion? `<p>${data.clientes.direccion}</p>`: ''}
+            </div>
+            <div class="pdf-meta-block">
+                <h4>Obra / Proyecto</h4>
+                <p><strong>${data.titulo}</strong></p>
+                ${data.obras?.titulo ? `<p>${data.obras.titulo}</p>` : ''}
+                ${data.obras?.direccion ? `<p>${data.obras.direccion}</p>` : ''}
+            </div>
+        </div>
+        <p class="pdf-items-title">Detalle de trabajos</p>
+        <table class="pdf-items-table">
+            <thead><tr><th style="width:75%">Descripción</th><th style="width:25%">Importe</th></tr></thead>
+            <tbody>
+                ${items.map(it => `<tr><td>${it.descripcion}</td><td>$ ${Number(it.monto).toLocaleString('es-AR')}</td></tr>`).join('')}
+            </tbody>
+        </table>
+        <div class="pdf-total-row">
+            <div class="pdf-total-box">
+                <div class="lbl">TOTAL</div>
+                <div class="amt">$ ${total.toLocaleString('es-AR')}</div>
+            </div>
+        </div>
+        ${data.notas_cliente ? `<div class="pdf-note">${data.notas_cliente}</div>` : ''}
+        <div class="pdf-conditions">
+            <h4>Condiciones</h4>
+            <div class="cond-row">
+                <div class="cond-item"><strong>Forma de pago</strong>${data.condiciones || '–'}</div>
+                <div class="cond-item"><strong>Validez</strong>${data.validez || '–'}</div>
+            </div>
+        </div>
+        <div class="pdf-footer">
+            Senderos de la Costa · Constructora en Mar del Plata · Desde 1984
+        </div>
+    `;
+    document.getElementById('pdf-preview').classList.add('open');
+}
+
+function closePdf() {
+    document.getElementById('pdf-preview').classList.remove('open');
+}
+
+// ============================================================
+// TRANSACCIONES
+// ============================================================
+async function loadTransacciones() {
+    const { data } = await sb.from('transacciones')
+        .select('*, obras(titulo)')
+        .order('fecha', { ascending: false });
+    const rows = data || [];
+    const totalIn  = rows.filter(r=>r.tipo==='ingreso').reduce((s,r)=>s+Number(r.monto),0);
+    const totalEg  = rows.filter(r=>r.tipo==='egreso').reduce((s,r)=>s+Number(r.monto),0);
+    const balance  = totalIn - totalEg;
+    document.getElementById('fin-ingresos').textContent = fmt$(totalIn);
+    document.getElementById('fin-egresos').textContent  = fmt$(totalEg);
+    const balEl = document.getElementById('fin-balance');
+    balEl.textContent = fmt$(balance);
+    balEl.className = 'stat-value ' + (balance >= 0 ? 'green' : 'red');
+    const tbody = document.getElementById('trans-tbody');
+    if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:40px">Sin movimientos registrados.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = rows.map(t => `
+        <tr>
+            <td>${fmtDate(t.fecha)}</td>
+            <td>${t.tipo==='ingreso'?'<span class="badge badge-green">Ingreso</span>':'<span class="badge badge-red">Egreso</span>'}</td>
+            <td>${t.descripcion}${t.categoria?`<br><small style="color:var(--muted)">${t.categoria}</small>`:''}</td>
+            <td>${t.obras?.titulo || '–'}</td>
+            <td class="${t.tipo==='ingreso'?'amount-pos':'amount-neg'}">${t.tipo==='ingreso'?'+':'−'} ${fmt$(t.monto)}</td>
+            <td><div class="td-actions">
+                <button class="btn btn-danger btn-sm" onclick="deleteTrans('${t.id}')">Eliminar</button>
+            </div></td>
+        </tr>
+    `).join('');
+}
+
+function openTransModal(tipo) {
+    document.getElementById('trans-id').value          = '';
+    document.getElementById('trans-tipo').value        = tipo;
+    document.getElementById('trans-descripcion').value = '';
+    document.getElementById('trans-monto').value       = '';
+    document.getElementById('trans-fecha').value       = new Date().toISOString().split('T')[0];
+    document.getElementById('trans-categoria').value   = '';
+    document.getElementById('trans-comprobante').value = '';
+    populateObraSelect('trans-obra');
+    document.getElementById('modal-trans-title').textContent = tipo === 'ingreso' ? 'Nuevo ingreso' : 'Nuevo egreso';
+    openModal('modal-trans');
+}
+
+document.getElementById('btn-ingreso').addEventListener('click', () => openTransModal('ingreso'));
+document.getElementById('btn-egreso').addEventListener('click',  () => openTransModal('egreso'));
+
+document.getElementById('btn-save-trans').addEventListener('click', async () => {
+    const desc  = document.getElementById('trans-descripcion').value.trim();
+    const monto = Number(document.getElementById('trans-monto').value);
+    if (!desc)    { toast('La descripción es obligatoria','err'); return; }
+    if (!monto)   { toast('El monto es obligatorio','err'); return; }
+    const payload = {
+        tipo:        document.getElementById('trans-tipo').value,
+        descripcion: desc,
+        monto,
+        fecha:       document.getElementById('trans-fecha').value,
+        obra_id:     document.getElementById('trans-obra').value || null,
+        categoria:   document.getElementById('trans-categoria').value.trim() || null,
+        comprobante: document.getElementById('trans-comprobante').value.trim() || null,
+    };
+    const { error } = await sb.from('transacciones').insert(payload);
+    if (error) { toast('Error al guardar','err'); return; }
+    closeModal('modal-trans');
+    toast('Movimiento registrado ✓');
+    loadTransacciones();
+});
+
+async function deleteTrans(id) {
+    if (!confirm('¿Eliminar este movimiento?')) return;
+    const { error } = await sb.from('transacciones').delete().eq('id',id);
+    if (error) { toast('Error al eliminar','err'); return; }
+    toast('Movimiento eliminado');
+    loadTransacciones();
+}
+
+// ============================================================
+// START
+// ============================================================
+checkAuth();
+</script>
+</body>
+</html>
