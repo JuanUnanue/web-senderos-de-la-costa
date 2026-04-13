@@ -354,14 +354,14 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 }
 .bottom-nav-item {
     flex: 1; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 3px;
+    align-items: center; justify-content: center; gap: 2px;
     cursor: pointer; color: var(--muted);
-    font-size: 0.62rem; letter-spacing: 0.2px;
+    font-size: 0.56rem; letter-spacing: 0.1px;
     border-top: 2px solid transparent;
-    transition: all 0.15s; padding: 0 4px;
+    transition: all 0.15s; padding: 0 2px;
     -webkit-tap-highlight-color: transparent;
 }
-.bottom-nav-item .bnav-icon { font-size: 1.25rem; line-height: 1; }
+.bottom-nav-item .bnav-icon { font-size: 1.1rem; line-height: 1; }
 .bottom-nav-item.active { color: var(--red); border-top-color: var(--red); }
 .bottom-nav-item:active { background: rgba(255,255,255,0.04); }
 
@@ -519,6 +519,10 @@ tr:hover td { background: rgba(255,255,255,0.02); }
                 <span class="bnav-icon">$</span>
                 <span>Finanzas</span>
             </div>
+            <div class="bottom-nav-item" data-view="equipos">
+                <span class="bnav-icon">◑</span>
+                <span>Equipos</span>
+            </div>
         </div>
     </nav>
 
@@ -543,6 +547,9 @@ tr:hover td { background: rgba(255,255,255,0.02); }
             </div>
             <div class="nav-item" data-view="transacciones">
                 <span class="icon">$</span> Finanzas
+            </div>
+            <div class="nav-item" data-view="equipos">
+                <span class="icon">◑</span> Equipos
             </div>
         </nav>
         <div class="sidebar-footer">
@@ -658,21 +665,65 @@ tr:hover td { background: rgba(255,255,255,0.02); }
             </div>
         </div>
 
+        <!-- EQUIPOS -->
+        <div id="view-equipos" class="view">
+            <div class="topbar">
+                <div><div class="topbar-title">Equipos</div></div>
+            </div>
+            <div class="section-bar">
+                <div class="section-bar-left">
+                    <h2>Grupos de trabajo</h2>
+                    <p id="equipos-count">Cargando…</p>
+                </div>
+                <button class="btn btn-primary" id="btn-nuevo-equipo">+ Nuevo equipo</button>
+            </div>
+            <div class="card">
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr><th>Equipo</th><th>Líder</th><th>Teléfono</th><th>Total cobrado</th><th>Acciones</th></tr></thead>
+                        <tbody id="equipos-tbody">
+                            <tr class="loading-row"><td colspan="5">Cargando…</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
         <!-- TRANSACCIONES -->
         <div id="view-transacciones" class="view">
             <div class="topbar">
                 <div><div class="topbar-title">Finanzas</div></div>
             </div>
-            <div class="stats-row" id="finanzas-stats">
-                <div class="stat-card"><div class="stat-label">Ingresos totales</div><div class="stat-value green" id="fin-ingresos">–</div></div>
-                <div class="stat-card"><div class="stat-label">Egresos totales</div><div class="stat-value red" id="fin-egresos">–</div></div>
-                <div class="stat-card"><div class="stat-label">Balance</div><div class="stat-value" id="fin-balance">–</div></div>
+
+            <!-- Desglose financiero -->
+            <div class="stats-row" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr));margin-bottom:12px">
+                <div class="stat-card">
+                    <div class="stat-label">Ingresos</div>
+                    <div class="stat-value green" id="fin-ingresos">–</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Pagos a equipos</div>
+                    <div class="stat-value" style="color:var(--yellow)" id="fin-equipos">–</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Materiales</div>
+                    <div class="stat-value red" id="fin-materiales">–</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Otros egresos</div>
+                    <div class="stat-value red" id="fin-otros">–</div>
+                </div>
+                <div class="stat-card" style="border-color:var(--green)">
+                    <div class="stat-label" style="color:var(--green)">Ganancia empresa</div>
+                    <div class="stat-value" id="fin-ganancia">–</div>
+                </div>
             </div>
+
             <div class="section-bar">
                 <div class="section-bar-left">
                     <h2>Movimientos</h2>
                 </div>
-                <div style="display:flex;gap:8px">
+                <div style="display:flex;gap:8px;flex-wrap:wrap">
                     <button class="btn btn-green btn-sm" id="btn-ingreso">+ Ingreso</button>
                     <button class="btn btn-danger btn-sm" style="background:rgba(232,0,11,0.12)" id="btn-egreso">− Egreso</button>
                 </div>
@@ -680,7 +731,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
             <div class="card">
                 <div class="table-wrap">
                     <table>
-                        <thead><tr><th>Fecha</th><th>Tipo</th><th>Descripción</th><th>Obra</th><th>Monto</th><th>Acciones</th></tr></thead>
+                        <thead><tr><th>Fecha</th><th>Categoría</th><th>Descripción</th><th>Obra / Equipo</th><th>Monto</th><th>Acciones</th></tr></thead>
                         <tbody id="trans-tbody">
                             <tr class="loading-row"><td colspan="6">Cargando…</td></tr>
                         </tbody>
@@ -886,6 +937,45 @@ tr:hover td { background: rgba(255,255,255,0.02); }
     </div>
 </div>
 
+<!-- MODAL EQUIPO -->
+<div class="modal-overlay" id="modal-equipo">
+    <div class="modal" style="max-width:460px">
+        <div class="modal-header">
+            <span class="modal-title" id="modal-equipo-title">Nuevo equipo</span>
+            <button class="modal-close" data-close="modal-equipo">✕</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="equipo-id">
+            <div class="form-grid cols-1">
+                <div class="form-field">
+                    <label>Nombre del equipo *</label>
+                    <input type="text" id="equipo-nombre" placeholder="Ej: Equipo García, Cuadrilla Norte…">
+                </div>
+            </div>
+            <div class="form-grid" style="margin-top:14px">
+                <div class="form-field">
+                    <label>Líder / Responsable *</label>
+                    <input type="text" id="equipo-lider" placeholder="Nombre del líder">
+                </div>
+                <div class="form-field">
+                    <label>Teléfono</label>
+                    <input type="tel" id="equipo-telefono" placeholder="223 000-0000">
+                </div>
+            </div>
+            <div class="form-grid cols-1" style="margin-top:14px">
+                <div class="form-field">
+                    <label>Notas</label>
+                    <textarea id="equipo-notas" placeholder="Observaciones…"></textarea>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" data-close="modal-equipo">Cancelar</button>
+            <button class="btn btn-primary" id="btn-save-equipo">Guardar</button>
+        </div>
+    </div>
+</div>
+
 <!-- MODAL TRANSACCIÓN -->
 <div class="modal-overlay" id="modal-trans">
     <div class="modal" style="max-width:480px">
@@ -912,17 +1002,29 @@ tr:hover td { background: rgba(255,255,255,0.02); }
                     <input type="date" id="trans-fecha">
                 </div>
             </div>
+            <!-- Categoría (solo para egresos) -->
+            <div id="trans-categoria-row" style="margin-top:14px;display:none">
+                <div class="form-field">
+                    <label>Categoría del egreso</label>
+                    <select id="trans-categoria" onchange="onCategoriaChange()">
+                        <option value="Equipo">Pago a equipo de trabajo</option>
+                        <option value="Materiales">Materiales</option>
+                        <option value="Otro">Otro egreso</option>
+                    </select>
+                </div>
+            </div>
+            <!-- Equipo (solo si categoria = Equipo) -->
+            <div id="trans-grupo-row" style="margin-top:14px;display:none">
+                <div class="form-field">
+                    <label>Equipo que cobró</label>
+                    <select id="trans-grupo"></select>
+                </div>
+            </div>
             <div class="form-grid" style="margin-top:14px">
                 <div class="form-field">
                     <label>Obra (opcional)</label>
                     <select id="trans-obra"></select>
                 </div>
-                <div class="form-field">
-                    <label>Categoría</label>
-                    <input type="text" id="trans-categoria" placeholder="Ej: Materiales, Mano de obra…">
-                </div>
-            </div>
-            <div class="form-grid cols-1" style="margin-top:14px">
                 <div class="form-field">
                     <label>Comprobante / N° factura</label>
                     <input type="text" id="trans-comprobante" placeholder="Opcional">
@@ -1028,6 +1130,7 @@ function navigate(view) {
     if (view === 'obras')         loadObras();
     if (view === 'presupuestos')  loadPresupuestos();
     if (view === 'transacciones') loadTransacciones();
+    if (view === 'equipos')       loadEquipos();
 }
 
 // ============================================================
@@ -1084,13 +1187,23 @@ async function initApp() {
     loadDashboard();
 }
 
+let allGrupos = [];
+
 async function refreshCache() {
-    const [{ data: c }, { data: o }] = await Promise.all([
+    const [{ data: c }, { data: o }, { data: g }] = await Promise.all([
         sb.from('clientes').select('id,nombre').order('nombre'),
         sb.from('obras').select('id,titulo,cliente_id').order('titulo'),
+        sb.from('grupos').select('id,nombre,lider').order('nombre'),
     ]);
     allClientes = c || [];
     allObras    = o || [];
+    allGrupos   = g || [];
+}
+
+function populateGrupoSelect(selectId, selectedId = null) {
+    const sel = document.getElementById(selectId);
+    sel.innerHTML = '<option value="">Seleccionar equipo…</option>' +
+        allGrupos.map(g => `<option value="${g.id}" ${g.id===selectedId?'selected':''}>${g.nombre} (${g.lider})</option>`).join('');
 }
 
 // ============================================================
@@ -1552,32 +1665,141 @@ function closePdf() {
 }
 
 // ============================================================
+// EQUIPOS
+// ============================================================
+async function loadEquipos() {
+    const { data: grupos } = await sb.from('grupos').select('*').order('nombre');
+    const { data: trans }  = await sb.from('transacciones').select('grupo_id, monto').eq('tipo','egreso').not('grupo_id','is',null);
+    document.getElementById('equipos-count').textContent = `${(grupos||[]).length} equipo(s)`;
+
+    // Sumar lo pagado por grupo
+    const pagadoPorGrupo = {};
+    (trans||[]).forEach(t => {
+        pagadoPorGrupo[t.grupo_id] = (pagadoPorGrupo[t.grupo_id] || 0) + Number(t.monto);
+    });
+
+    const tbody = document.getElementById('equipos-tbody');
+    if (!grupos || !grupos.length) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:40px">Sin equipos registrados.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = grupos.map(g => `
+        <tr>
+            <td><strong>${g.nombre}</strong></td>
+            <td>${g.lider}</td>
+            <td>${g.telefono || '–'}</td>
+            <td class="amount-neg">${fmt$(pagadoPorGrupo[g.id] || 0)}</td>
+            <td><div class="td-actions">
+                <button class="btn btn-ghost btn-sm" onclick="editEquipo('${g.id}')">Editar</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteEquipo('${g.id}','${g.nombre.replace(/'/g,'\\\'') }')">Eliminar</button>
+            </div></td>
+        </tr>
+    `).join('');
+}
+
+document.getElementById('btn-nuevo-equipo').addEventListener('click', () => {
+    document.getElementById('equipo-id').value       = '';
+    document.getElementById('equipo-nombre').value   = '';
+    document.getElementById('equipo-lider').value    = '';
+    document.getElementById('equipo-telefono').value = '';
+    document.getElementById('equipo-notas').value    = '';
+    document.getElementById('modal-equipo-title').textContent = 'Nuevo equipo';
+    openModal('modal-equipo');
+});
+
+async function editEquipo(id) {
+    const { data } = await sb.from('grupos').select('*').eq('id',id).single();
+    if (!data) return;
+    document.getElementById('equipo-id').value       = data.id;
+    document.getElementById('equipo-nombre').value   = data.nombre || '';
+    document.getElementById('equipo-lider').value    = data.lider || '';
+    document.getElementById('equipo-telefono').value = data.telefono || '';
+    document.getElementById('equipo-notas').value    = data.notas || '';
+    document.getElementById('modal-equipo-title').textContent = 'Editar equipo';
+    openModal('modal-equipo');
+}
+
+document.getElementById('btn-save-equipo').addEventListener('click', async () => {
+    const id     = document.getElementById('equipo-id').value;
+    const nombre = document.getElementById('equipo-nombre').value.trim();
+    const lider  = document.getElementById('equipo-lider').value.trim();
+    if (!nombre) { toast('El nombre es obligatorio','err'); return; }
+    if (!lider)  { toast('El líder es obligatorio','err'); return; }
+    const payload = {
+        nombre,
+        lider,
+        telefono: document.getElementById('equipo-telefono').value.trim() || null,
+        notas:    document.getElementById('equipo-notas').value.trim() || null,
+    };
+    let err;
+    if (id) ({ error: err } = await sb.from('grupos').update(payload).eq('id',id));
+    else    ({ error: err } = await sb.from('grupos').insert(payload));
+    if (err) { toast('Error al guardar','err'); return; }
+    closeModal('modal-equipo');
+    toast('Equipo guardado ✓');
+    await refreshCache();
+    loadEquipos();
+});
+
+async function deleteEquipo(id, nombre) {
+    if (!confirm(`¿Eliminar el equipo "${nombre}"?`)) return;
+    const { error } = await sb.from('grupos').delete().eq('id',id);
+    if (error) { toast('Error al eliminar','err'); return; }
+    toast('Equipo eliminado');
+    await refreshCache();
+    loadEquipos();
+}
+
+// ============================================================
 // TRANSACCIONES
 // ============================================================
+function onCategoriaChange() {
+    const cat = document.getElementById('trans-categoria').value;
+    const grupoRow = document.getElementById('trans-grupo-row');
+    grupoRow.style.display = cat === 'Equipo' ? 'block' : 'none';
+}
+
 async function loadTransacciones() {
     const { data } = await sb.from('transacciones')
-        .select('*, obras(titulo)')
+        .select('*, obras(titulo), grupos(nombre)')
         .order('fecha', { ascending: false });
     const rows = data || [];
-    const totalIn  = rows.filter(r=>r.tipo==='ingreso').reduce((s,r)=>s+Number(r.monto),0);
-    const totalEg  = rows.filter(r=>r.tipo==='egreso').reduce((s,r)=>s+Number(r.monto),0);
-    const balance  = totalIn - totalEg;
-    document.getElementById('fin-ingresos').textContent = fmt$(totalIn);
-    document.getElementById('fin-egresos').textContent  = fmt$(totalEg);
-    const balEl = document.getElementById('fin-balance');
-    balEl.textContent = fmt$(balance);
-    balEl.className = 'stat-value ' + (balance >= 0 ? 'green' : 'red');
+
+    // Desglose financiero
+    const totalIn  = rows.filter(r => r.tipo==='ingreso').reduce((s,r) => s+Number(r.monto), 0);
+    const totalEq  = rows.filter(r => r.tipo==='egreso' && r.grupo_id).reduce((s,r) => s+Number(r.monto), 0);
+    const totalMat = rows.filter(r => r.tipo==='egreso' && !r.grupo_id && r.categoria==='Materiales').reduce((s,r) => s+Number(r.monto), 0);
+    const totalOtr = rows.filter(r => r.tipo==='egreso' && !r.grupo_id && r.categoria!=='Materiales').reduce((s,r) => s+Number(r.monto), 0);
+    const ganancia = totalIn - totalEq - totalMat - totalOtr;
+
+    document.getElementById('fin-ingresos').textContent  = fmt$(totalIn);
+    document.getElementById('fin-equipos').textContent   = fmt$(totalEq);
+    document.getElementById('fin-materiales').textContent= fmt$(totalMat);
+    document.getElementById('fin-otros').textContent     = fmt$(totalOtr);
+    const ganEl = document.getElementById('fin-ganancia');
+    ganEl.textContent = fmt$(ganancia);
+    ganEl.className   = 'stat-value ' + (ganancia >= 0 ? 'green' : 'red');
+
+    // Tabla
     const tbody = document.getElementById('trans-tbody');
     if (!rows.length) {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:40px">Sin movimientos registrados.</td></tr>';
         return;
     }
+
+    const catBadge = (t) => {
+        if (t.tipo === 'ingreso') return '<span class="badge badge-green">Ingreso</span>';
+        if (t.grupo_id)           return '<span class="badge badge-yellow">Equipo</span>';
+        if (t.categoria === 'Materiales') return '<span class="badge badge-gray">Materiales</span>';
+        return '<span class="badge badge-red">Egreso</span>';
+    };
+
     tbody.innerHTML = rows.map(t => `
         <tr>
             <td>${fmtDate(t.fecha)}</td>
-            <td>${t.tipo==='ingreso'?'<span class="badge badge-green">Ingreso</span>':'<span class="badge badge-red">Egreso</span>'}</td>
-            <td>${t.descripcion}${t.categoria?`<br><small style="color:var(--muted)">${t.categoria}</small>`:''}</td>
-            <td>${t.obras?.titulo || '–'}</td>
+            <td>${catBadge(t)}</td>
+            <td>${t.descripcion}</td>
+            <td>${t.grupos?.nombre ? `<span style="color:var(--yellow)">${t.grupos.nombre}</span>` : (t.obras?.titulo || '–')}</td>
             <td class="${t.tipo==='ingreso'?'amount-pos':'amount-neg'}">${t.tipo==='ingreso'?'+':'−'} ${fmt$(t.monto)}</td>
             <td><div class="td-actions">
                 <button class="btn btn-danger btn-sm" onclick="deleteTrans('${t.id}')">Eliminar</button>
@@ -1592,9 +1814,20 @@ function openTransModal(tipo) {
     document.getElementById('trans-descripcion').value = '';
     document.getElementById('trans-monto').value       = '';
     document.getElementById('trans-fecha').value       = new Date().toISOString().split('T')[0];
-    document.getElementById('trans-categoria').value   = '';
     document.getElementById('trans-comprobante').value = '';
     populateObraSelect('trans-obra');
+    populateGrupoSelect('trans-grupo');
+    // Mostrar/ocultar campos según tipo
+    const catRow   = document.getElementById('trans-categoria-row');
+    const grupoRow = document.getElementById('trans-grupo-row');
+    if (tipo === 'egreso') {
+        catRow.style.display   = 'block';
+        document.getElementById('trans-categoria').value = 'Equipo';
+        grupoRow.style.display = 'block';
+    } else {
+        catRow.style.display   = 'none';
+        grupoRow.style.display = 'none';
+    }
     document.getElementById('modal-trans-title').textContent = tipo === 'ingreso' ? 'Nuevo ingreso' : 'Nuevo egreso';
     openModal('modal-trans');
 }
@@ -1605,15 +1838,23 @@ document.getElementById('btn-egreso').addEventListener('click',  () => openTrans
 document.getElementById('btn-save-trans').addEventListener('click', async () => {
     const desc  = document.getElementById('trans-descripcion').value.trim();
     const monto = Number(document.getElementById('trans-monto').value);
-    if (!desc)    { toast('La descripción es obligatoria','err'); return; }
-    if (!monto)   { toast('El monto es obligatorio','err'); return; }
+    const tipo  = document.getElementById('trans-tipo').value;
+    if (!desc)  { toast('La descripción es obligatoria','err'); return; }
+    if (!monto) { toast('El monto es obligatorio','err'); return; }
+
+    const categoria = tipo === 'egreso' ? document.getElementById('trans-categoria').value : null;
+    const grupo_id  = (tipo === 'egreso' && categoria === 'Equipo')
+        ? (document.getElementById('trans-grupo').value || null)
+        : null;
+
     const payload = {
-        tipo:        document.getElementById('trans-tipo').value,
+        tipo,
         descripcion: desc,
         monto,
         fecha:       document.getElementById('trans-fecha').value,
         obra_id:     document.getElementById('trans-obra').value || null,
-        categoria:   document.getElementById('trans-categoria').value.trim() || null,
+        categoria,
+        grupo_id,
         comprobante: document.getElementById('trans-comprobante').value.trim() || null,
     };
     const { error } = await sb.from('transacciones').insert(payload);
