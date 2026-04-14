@@ -1656,23 +1656,35 @@ document.getElementById('btn-save-ppto').addEventListener('click', async () => {
     // Validar total
     const montoTotal = Number(document.getElementById('ppto-monto-total').value || 0);
     if (!montoTotal) { toast('Ingresá el monto total del presupuesto','err'); return; }
+    if (!pptoId)     { toast('Error: no se pudo obtener el ID del presupuesto','err'); return; }
 
-    // Guardar: items descriptivos (monto=0) + item especial __total__ con el monto
-    const itemsDescriptivos = pptoItems.map((it, i) => ({
-        presupuesto_id: pptoId,
-        descripcion:    it.descripcion || '',
-        monto:          0,
-        orden:          i
-    }));
+    // Guardar: primero borrar los anteriores
+    await sb.from('presupuesto_items').delete().eq('presupuesto_id', pptoId);
+
+    // Armar array a insertar — solo el total si no hay ítems descriptivos
+    const itemsDescriptivos = pptoItems
+        .filter(it => (it.descripcion || '').trim() !== '')
+        .map((it, i) => ({
+            presupuesto_id: pptoId,
+            descripcion:    it.descripcion.trim(),
+            monto:          0,
+            orden:          i
+        }));
+
     const itemTotal = {
         presupuesto_id: pptoId,
         descripcion:    '__total__',
         monto:          montoTotal,
         orden:          999
     };
-    await sb.from('presupuesto_items').delete().eq('presupuesto_id', pptoId);
-    const { error: errItems } = await sb.from('presupuesto_items').insert([...itemsDescriptivos, itemTotal]);
-    if (errItems) { toast('Error al guardar ítems','err'); return; }
+
+    const toInsert = [...itemsDescriptivos, itemTotal];
+    const { error: errItems } = await sb.from('presupuesto_items').insert(toInsert);
+    if (errItems) {
+        console.error('Supabase error items:', errItems);
+        toast(`Error: ${errItems.message || errItems.details || 'No se pudieron guardar los ítems'}`, 'err');
+        return;
+    }
     closeModal('modal-presupuesto');
     toast('Presupuesto guardado ✓');
     loadPptoPanel();
