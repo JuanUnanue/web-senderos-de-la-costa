@@ -1695,13 +1695,12 @@ async function previewPdf(id) {
         .select('*, clientes(*), obras(*), presupuesto_items(*)')
         .eq('id', id).single();
     if (!data) return;
-    const items  = (data.presupuesto_items||[]).sort((a,b)=>a.orden-b.orden);
-    const total  = items.reduce((s,i) => s + Number(i.monto||0), 0);
-    const hoy    = new Date().toLocaleDateString('es-AR');
-    const sheet  = document.getElementById('pdf-sheet');
-    const itemTotal     = items.find(i => i.descripcion === '__total__');
-    const itemsDesc     = items.filter(i => i.descripcion !== '__total__');
-    const total         = itemTotal ? Number(itemTotal.monto) : items.reduce((s,i)=>s+Number(i.monto||0),0);
+    const items     = (data.presupuesto_items||[]).sort((a,b)=>a.orden-b.orden);
+    const itemTotal = items.find(i => i.descripcion === '__total__');
+    const itemsDesc = items.filter(i => i.descripcion !== '__total__');
+    const total     = itemTotal ? Number(itemTotal.monto) : items.reduce((s,i)=>s+Number(i.monto||0),0);
+    const hoy       = new Date().toLocaleDateString('es-AR');
+    const sheet     = document.getElementById('pdf-sheet');
 
     sheet.innerHTML = `
         <div class="pdf-header">
