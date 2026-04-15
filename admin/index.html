@@ -1421,6 +1421,10 @@ async function loadObras() {
                 </button>
             </td>
             <td><div class="td-actions">
+                <button class="btn btn-sm" onclick="gastoRapido('${o.id}','${o.titulo.replace(/'/g,'\\\'') }')"
+                    style="background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;font-weight:600">
+                    + Gasto
+                </button>
                 <button class="btn btn-ghost btn-sm" onclick="editObra('${o.id}')">Editar</button>
                 <button class="btn btn-danger btn-sm" onclick="deleteObra('${o.id}','${o.titulo.replace(/'/g,'\\\'') }')">Eliminar</button>
             </div></td>
@@ -1492,6 +1496,17 @@ document.getElementById('btn-save-obra').addEventListener('click', async () => {
     await refreshCache();
     loadObras();
 });
+
+function gastoRapido(obraId, obraTitulo) {
+    // Abre el modal de egreso con la obra ya seleccionada
+    openTransModal('egreso');
+    // Esperar a que el DOM del modal esté listo y pre-seleccionar la obra
+    setTimeout(() => {
+        const sel = document.getElementById('trans-obra');
+        if (sel) sel.value = obraId;
+        document.getElementById('modal-trans-title').textContent = `Nuevo gasto — ${obraTitulo}`;
+    }, 50);
+}
 
 async function deleteObra(id, titulo) {
     if (!confirm(`¿Eliminar obra "${titulo}"?`)) return;
