@@ -1061,7 +1061,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 <!-- PDF PREVIEW -->
 <div id="pdf-preview">
     <div class="pdf-actions">
-        <button class="btn btn-primary" onclick="window.print()">🖨 Imprimir / Guardar PDF</button>
+        <button class="btn btn-primary" onclick="printPdf()">🖨 Imprimir / Guardar PDF</button>
         <button class="btn btn-secondary" onclick="closePdf()">✕ Cerrar</button>
     </div>
     <div class="pdf-sheet" id="pdf-sheet"></div>
@@ -1481,8 +1481,9 @@ async function deleteObra(id, titulo) {
 // ============================================================
 // PRESUPUESTOS — PANEL CONTEXTUAL
 // ============================================================
-let pptoPanel = { tipo: null, id: null, nombre: null }; // 'cliente' | 'obra'
-let pptoItems = [];
+let pptoPanel   = { tipo: null, id: null, nombre: null }; // 'cliente' | 'obra'
+let pptoItems   = [];
+let pdfDataActual = null; // datos del presupuesto abierto en PDF
 
 function renderPptoItems() {
     const tbody = document.getElementById('ppto-items-tbody');
@@ -1707,6 +1708,7 @@ async function previewPdf(id) {
         .select('*, clientes(*), obras(*), presupuesto_items(*)')
         .eq('id', id).single();
     if (!data) return;
+    pdfDataActual = data; // guardar para usar en printPdf()
     const items     = (data.presupuesto_items||[]).sort((a,b)=>a.orden-b.orden);
     const itemTotal = items.find(i => i.descripcion === '__total__');
     const itemsDesc = items.filter(i => i.descripcion !== '__total__');
@@ -1777,6 +1779,18 @@ async function previewPdf(id) {
         </div>
     `;
     document.getElementById('pdf-preview').classList.add('open');
+}
+
+function printPdf() {
+    const clienteNombre = (pdfDataActual?.clientes?.nombre || '').trim();
+    const titulo = clienteNombre
+        ? `Presupuesto - ${clienteNombre}`
+        : 'Presupuesto - Senderos de la Costa';
+    const originalTitle = document.title;
+    document.title = titulo;
+    window.print();
+    // Restaurar título después de que el diálogo de impresión se cierre
+    setTimeout(() => { document.title = originalTitle; }, 1000);
 }
 
 function closePdf() {
