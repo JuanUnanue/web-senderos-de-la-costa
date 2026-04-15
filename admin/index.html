@@ -1066,7 +1066,7 @@ tr:hover td { background: #f8f9ff; }
             </div>
             <div class="form-grid" style="margin-top:14px">
                 <div class="form-field">
-                    <label>Obra (opcional)</label>
+                    <label id="trans-obra-label">Obra</label>
                     <select id="trans-obra"></select>
                 </div>
                 <div class="form-field">
@@ -1590,9 +1590,9 @@ async function loadPptoPanel() {
     }
     tbody.innerHTML = data.map(p => {
         const total = (p.presupuesto_items||[]).reduce((s,i) => s+Number(i.monto||0), 0);
-        const crearObraBtn = p.estado === 'aprobado'
+        const crearObraBtn = (p.estado === 'aprobado' && !p.obra_id)
             ? `<button class="btn btn-green btn-sm" onclick="crearObraDesdePresupuesto('${p.id}')">→ Crear obra</button>`
-            : '';
+            : (p.obra_id ? `<span class="badge badge-green">Obra creada</span>` : '');
         return `<tr>
             <td>#${p.numero}</td>
             <td><strong>${p.titulo}</strong></td>
@@ -2003,6 +2003,9 @@ function openTransModal(tipo) {
         catRow.style.display   = 'none';
         grupoRow.style.display = 'none';
     }
+    // Label de obra según tipo
+    document.getElementById('trans-obra-label').innerHTML =
+        tipo === 'ingreso' ? 'Obra <span style="color:var(--red)">*</span>' : 'Obra (opcional)';
     document.getElementById('modal-trans-title').textContent = tipo === 'ingreso' ? 'Nuevo ingreso' : 'Nuevo egreso';
     openModal('modal-trans');
 }
@@ -2017,10 +2020,20 @@ document.getElementById('btn-save-trans').addEventListener('click', async () => 
     if (!desc)  { toast('La descripción es obligatoria','err'); return; }
     if (!monto) { toast('El monto es obligatorio','err'); return; }
 
+    // Obra obligatoria en ingresos
+    if (tipo === 'ingreso' && !document.getElementById('trans-obra').value) {
+        toast('Seleccioná la obra a la que corresponde el ingreso','err'); return;
+    }
+
     const categoria = tipo === 'egreso' ? document.getElementById('trans-categoria').value : null;
     const grupo_id  = (tipo === 'egreso' && categoria === 'Equipo')
         ? (document.getElementById('trans-grupo').value || null)
         : null;
+
+    // Equipo obligatorio en pago a equipo
+    if (tipo === 'egreso' && categoria === 'Equipo' && !grupo_id) {
+        toast('Seleccioná el equipo que recibió el pago','err'); return;
+    }
 
     const payload = {
         tipo,
