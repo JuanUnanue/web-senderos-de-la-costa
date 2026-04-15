@@ -1191,6 +1191,27 @@ function toast(msg, type = 'ok') {
 // ============================================================
 function fmt$(n) { return '$ ' + Number(n || 0).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }); }
 function fmtDate(d) { if (!d) return '–'; const [y,m,day] = d.split('-'); return `${day}/${m}/${y}`; }
+function estadoSelectStyle(e) {
+    const styles = {
+        borrador:  'background:#f3f4f6;color:#6b7280;',
+        enviado:   'background:#dbeafe;color:#1d4ed8;',
+        aprobado:  'background:#dcfce7;color:#15803d;',
+        rechazado: 'background:#fee2e2;color:#dc2626;',
+        en_curso:  'background:#dbeafe;color:#1d4ed8;',
+        finalizada:'background:#dcfce7;color:#15803d;',
+        pausada:   'background:#fef9c3;color:#a16207;',
+        cancelada: 'background:#fee2e2;color:#dc2626;',
+    };
+    return styles[e] || 'background:#f3f4f6;color:#6b7280;';
+}
+
+async function cambiarEstadoPpto(id, nuevoEstado) {
+    const { error } = await sb.from('presupuestos').update({ estado: nuevoEstado }).eq('id', id);
+    if (error) { toast('Error al actualizar estado', 'err'); return; }
+    toast('Estado actualizado ✓');
+    loadPptoPanel(); // recargar para actualizar el botón "Crear obra" si corresponde
+}
+
 function estadoBadge(e) {
     const map = {
         en_curso:  ['badge-blue','En curso'],
@@ -1597,7 +1618,17 @@ async function loadPptoPanel() {
             <td>#${p.numero}</td>
             <td><strong>${p.titulo}</strong></td>
             <td>${fmt$(total)}</td>
-            <td>${estadoBadge(p.estado)}</td>
+            <td>
+                <select onchange="cambiarEstadoPpto('${p.id}', this.value)"
+                    style="border:none;border-radius:20px;padding:4px 10px;font-size:0.72rem;
+                    font-weight:600;text-transform:uppercase;letter-spacing:0.3px;cursor:pointer;
+                    ${estadoSelectStyle(p.estado)}">
+                    <option value="borrador"  ${p.estado==='borrador' ?'selected':''}>Borrador</option>
+                    <option value="enviado"   ${p.estado==='enviado'  ?'selected':''}>Enviado</option>
+                    <option value="aprobado"  ${p.estado==='aprobado' ?'selected':''}>Aprobado</option>
+                    <option value="rechazado" ${p.estado==='rechazado'?'selected':''}>Rechazado</option>
+                </select>
+            </td>
             <td>${fmtDate(p.created_at?.split('T')[0])}</td>
             <td><div class="td-actions" style="flex-wrap:wrap">
                 <button class="btn btn-primary btn-sm" onclick="previewPdf('${p.id}')">PDF</button>
