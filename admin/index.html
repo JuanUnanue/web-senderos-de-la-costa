@@ -316,7 +316,9 @@ tr:hover td { background: #f8f9ff; }
     width: 210mm; max-width: 100%; margin: 0 auto;
     padding: 20mm 18mm; font-family: Arial, sans-serif; font-size: 11pt;
     box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+    display: flex; flex-direction: column; min-height: 257mm;
 }
+.pdf-bottom { margin-top: auto; }
 .pdf-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #ddd; padding-bottom: 18px; margin-bottom: 22px; }
 .pdf-company-name { font-size: 18pt; font-weight: 700; color: #e8000b; }
 .pdf-company-sub  { font-size: 9.5pt; color: #777; margin-top: 5px; line-height: 1.6; font-weight: 400; }
@@ -334,7 +336,7 @@ tr:hover td { background: #f8f9ff; }
 .pdf-total-row { display: flex; justify-content: flex-end; margin-top: 16px; }
 .pdf-total-box { background: #1a1a1a; color: #fff; padding: 14px 22px; min-width: 230px; border-radius: 4px; }
 .pdf-total-box .lbl { font-size: 8.5pt; color: #bbb; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 400; }
-.pdf-total-box .amt { font-size: 17pt; font-weight: 600; color: #e8000b; margin-top: 3px; }
+.pdf-total-box .amt { font-size: 17pt; font-weight: 600; color: #fff; margin-top: 3px; }
 .pdf-note { margin-top: 18px; padding: 10px 14px; background: #fff9f9; border-left: 3px solid #e8000b; font-size: 9.5pt; color: #777; font-weight: 400; line-height: 1.5; }
 .pdf-conditions { margin-top: 22px; font-size: 10pt; }
 .pdf-conditions h4 { font-size: 8pt; text-transform: uppercase; letter-spacing: 0.8px; color: #aaa; margin-bottom: 10px; font-weight: 600; }
@@ -352,7 +354,7 @@ tr:hover td { background: #f8f9ff; }
     #pdf-preview, #pdf-preview * { visibility: visible; }
     #pdf-preview { position: absolute; top: 0; left: 0; padding: 0; background: none; }
     .pdf-actions { display: none; }
-    .pdf-sheet { box-shadow: none; width: 100%; padding: 16mm 15mm; }
+    .pdf-sheet { box-shadow: none; width: 100%; padding: 16mm 15mm; min-height: 265mm; }
 }
 
 /* ============================================================
@@ -1835,12 +1837,6 @@ async function previewPdf(id) {
                 ${data.clientes?.email    ? `<p>${data.clientes.email}</p>`    : ''}
                 ${data.clientes?.direccion? `<p>${data.clientes.direccion}</p>`: ''}
             </div>
-            <div class="pdf-meta-block">
-                <h4>Obra / Proyecto</h4>
-                <p><strong>${data.titulo}</strong></p>
-                ${data.obras?.titulo ? `<p>${data.obras.titulo}</p>` : ''}
-                ${data.obras?.direccion ? `<p>${data.obras.direccion}</p>` : ''}
-            </div>
         </div>
         ${itemsDesc.length > 0 ? `
         <p class="pdf-items-title">Trabajos incluidos</p>
@@ -1854,22 +1850,24 @@ async function previewPdf(id) {
             </tbody>
         </table>
         ` : ''}
-        <div class="pdf-total-row">
-            <div class="pdf-total-box">
-                <div class="lbl">TOTAL</div>
-                <div class="amt">${fmt$(total)}</div>
+        <div class="pdf-bottom">
+            <div class="pdf-total-row">
+                <div class="pdf-total-box">
+                    <div class="lbl">TOTAL</div>
+                    <div class="amt">${fmt$(total)}</div>
+                </div>
             </div>
-        </div>
-        ${data.notas_cliente ? `<div class="pdf-note">${data.notas_cliente}</div>` : ''}
-        <div class="pdf-conditions">
-            <h4>Condiciones</h4>
-            <div class="cond-row">
-                <div class="cond-item"><strong>Forma de pago</strong><span>${data.condiciones || '–'}</span></div>
-                <div class="cond-item"><strong>Validez</strong><span>${data.validez || '–'}</span></div>
+            ${data.notas_cliente ? `<div class="pdf-note">${data.notas_cliente}</div>` : ''}
+            <div class="pdf-conditions">
+                <h4>Condiciones</h4>
+                <div class="cond-row">
+                    <div class="cond-item"><strong>Forma de pago</strong><span>${data.condiciones || '–'}</span></div>
+                    <div class="cond-item"><strong>Validez</strong><span>${data.validez || '–'}</span></div>
+                </div>
             </div>
-        </div>
-        <div class="pdf-footer">
-            Senderos de la Costa · Constructora en Mar del Plata · Desde 1984
+            <div class="pdf-footer">
+                Senderos de la Costa · Constructora en Mar del Plata · Desde 1984
+            </div>
         </div>
     `;
     document.getElementById('pdf-preview').classList.add('open');
