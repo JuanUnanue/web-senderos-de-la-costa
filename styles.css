@@ -804,11 +804,45 @@ body {
     color: var(--chalk-dim);
 }
 
+.footer-meta {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
 .footer-copy {
     font-size: 0.78rem;
     color: var(--chalk-muted);
     opacity: 0.5;
     font-weight: 300;
+}
+
+.footer-credit {
+    font-size: 0.78rem;
+    color: var(--chalk-muted);
+    opacity: 0.5;
+    font-weight: 300;
+    letter-spacing: 0.02em;
+}
+
+.footer-credit::before {
+    content: "·";
+    margin: 0 8px;
+    opacity: 0.7;
+}
+
+.footer-credit a {
+    color: var(--chalk-dim);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.footer-credit a:hover {
+    color: #fff;
+    border-bottom-color: currentColor;
 }
 
 /* ============================================
@@ -873,6 +907,8 @@ body {
 
     .footer { padding: 32px 24px; }
     .footer-inner { flex-direction: column; gap: 12px; text-align: center; }
+    .footer-meta { flex-direction: column; align-items: center; gap: 4px; }
+    .footer-credit::before { display: none; }
 
     .lightbox-stage { padding: 16px 60px; }
 }
